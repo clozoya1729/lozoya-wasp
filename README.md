@@ -1,4 +1,6 @@
-![WASP](assets/wasp.png)
+<p align="center">
+  <img src="assets/wasp.png" width="175">
+</p>
 
 # wasp-js
 

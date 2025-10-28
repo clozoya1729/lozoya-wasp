@@ -1,11 +1,10 @@
 # wasp-js
-![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 
 [![Patreon](https://img.shields.io/badge/Support-Patreon-051D34?logo=patreon&logoColor=white)](https://www.patreon.com/lozoya)
-
 [![Buy Me A Coffee](https://img.shields.io/badge/Donate-Buy%20Me%20A%20Coffee-FFDD00?logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/clozoya172b)
-
 [![Ko-fi](https://img.shields.io/badge/Tip-Ko%E2%80%91fi-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/lozoya)
+![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
+
 
 ## Waypoint Adaptive Spline Planner Demo (HTML+JS)
 
@@ -144,4 +143,28 @@ If you use WASP-JS in academic work, please cite the Zenodo DOI.
   url       = {https://github.com/<USER>/wasp-js}
 }
 -->
+
+---
+
+## Support This Work
+
+Open source engineering takes a lot of time and coffee. If you would like to directly support ongoing research, development, and maintenance of these tools, you can do so here:
+
+[![Patreon](https://img.shields.io/badge/Support-Patreon-051D34?logo=patreon&logoColor=white)](https://www.patreon.com/lozoya)
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Donate-Buy%20Me%20A%20Coffee-FFDD00?logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/clozoya172b)
+
+[![Ko-fi](https://img.shields.io/badge/Tip-Ko%E2%80%91fi-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/lozoya)
+
+Your support helps keep the project healthy and moving forward.
+
+---
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). Any modified version made available to users over a network must also be released under the AGPL-3.0. See the LICENSE file for full details.
+
+![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
+
+---
 

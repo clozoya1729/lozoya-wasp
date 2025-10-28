@@ -1,3 +1,5 @@
+![WASP](assets/wasp.png)
+
 # wasp-js
 
 [![Patreon](https://img.shields.io/badge/Support-Patreon-051D34?logo=patreon&logoColor=white)](https://www.patreon.com/lozoya)

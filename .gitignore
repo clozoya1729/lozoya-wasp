@@ -142,6 +142,7 @@ vite.config.ts.timestamp-*
 __pycache__/
 *.py[cod]
 *$py.class
+.idea/*
 
 # Environments
 .env

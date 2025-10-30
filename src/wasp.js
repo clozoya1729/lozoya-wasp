@@ -312,64 +312,22 @@ function draw() {
         }
         ctx.restore();
     }
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(OBSTACLE.x, OBSTACLE.y, OBSTACLE.r, 0, 2 * Math.PI);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = "#a40";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.font = "10px";
-    ctx.fillStyle = "#b00";
-    // ctx.fillText("Obstacle", OBSTACLE.x - 29, OBSTACLE.y - OBSTACLE.r - 6);
-    ctx.restore();
+    draw_circle(ctx, OBSTACLE.r, [OBSTACLE.x, OBSTACLE.y], '#a40');
     let theta = tangentAngles[0];
     let {hits: lidarHits, angles: lidarAngles} = get_lidar_hits(points[0], theta);
-    ctx.save();
-    ctx.strokeStyle = "#4dd0e1";
-    ctx.lineWidth = 1;
     for (let i = 0; i < lidarAngles.length; ++i) {
         let angle = lidarAngles[i];
         let x1 = points[0].x + LIDAR_RANGE * Math.cos(angle);
         let y1 = points[0].y + LIDAR_RANGE * Math.sin(angle);
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        ctx.lineTo(x1, y1);
-        ctx.globalAlpha = 0.3;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+        draw_line(ctx, [points[0].x, points[0].y], [x1, y1], color = '#4dd0e1', 1, 0.5);
     }
     for (let hit of lidarHits) {
-        ctx.beginPath();
-        ctx.arc(hit.x, hit.y, 3, 0, 2 * Math.PI);
-        ctx.fillStyle = "#f00";
-        ctx.fill();
+        draw_circle(ctx, 3, [hit.x, hit.y], '#f00', 1, 1, true)
     }
-    ctx.restore();
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(points[2].x, points[2].y, 4, 0, 2 * Math.PI);
-    ctx.strokeStyle = "#1976d2";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    // ctx.fillStyle = "#fff";
-    // ctx.fill();
-    ctx.font = "10px";
-    ctx.fillStyle = "#fff";
-    ctx.fillText("Target (P3)", points[2].x - 34, points[2].y + 24);
-    ctx.restore();
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(points[1].x, points[1].y, 8, 0, 2 * Math.PI);
-    ctx.strokeStyle = "#43a047";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    // ctx.fillStyle = "#fff";
-    // ctx.fill();
-    ctx.font = "10px";
-    ctx.fillStyle = "#fff";
-    ctx.fillText("Waypoint (P2)", points[1].x - 38, points[1].y - 16);
-    ctx.restore();
+    draw_circle(ctx, 4, [points[2].x, points[2].y], color = '#1976d2')
+    draw_circle(ctx, 8, [points[1].x, points[1].y], color = "#43a047");
+    draw_text(ctx, [points[2].x - 34, points[2].y + 24], 'Target (P3)', font='10px', color="#fff");
+    draw_text(ctx, [points[1].x - 38, points[1].y - 16], 'Waypoint (P2)', font='10px', color='#fff');
     ctx.save();
     ctx.translate(points[0].x, points[0].y);
     ctx.rotate(tangentAngles[0]);
@@ -413,31 +371,56 @@ function draw() {
     ctx.setLineDash([6, 4]);
     ctx.stroke();
     ctx.restore();
-    draw_tangent(points[0], tangentAngles[0], "#0ff");
-    draw_tangent(points[1], tangentAngles[1], "#43a047");
-    draw_tangent(points[2], tangentAngles[2], "#1976d2");
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(blobX, blobY, blobRadius, 0, 2 * Math.PI);
-    ctx.globalAlpha = 0.5;
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "#6d1b7b";
-    ctx.stroke();
-    ctx.restore();
+    draw_tangent(ctx, points[0], tangentAngles[0], "#0ff");
+    draw_tangent(ctx, points[1], tangentAngles[1], "#43a047");
+    draw_tangent(ctx, points[2], tangentAngles[2], "#1976d2");
+    draw_circle(ctx, blobRadius, [blobX, blobY]);
 }
 
-function draw_tangent(p, theta, color) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x + 44 * Math.cos(theta), p.y + 44 * Math.sin(theta));
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([6, 4]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
+function draw_text(canvas, coordinate, text, font, color) {
+    canvas.save();
+    canvas.font = font;
+    canvas.fillStyle = color;
+    canvas.fillText(text, coordinate[0], coordinate[1]);
+    canvas.restore();
+}
+
+function draw_line(canvas, start, end, color = '#888', linewidth = 1, alpha = 1) {
+    canvas.save();
+    canvas.strokeStyle = color;
+    canvas.lineWidth = linewidth;
+    canvas.beginPath();
+    canvas.moveTo(start[0], start[1]);
+    canvas.lineTo(end[0], end[1]);
+    canvas.globalAlpha = alpha;
+    canvas.stroke();
+}
+
+function draw_circle(canvas, radius, centroid, color = '#6d1b7b', linewidth = 1, alpha = 1, fill = false) {
+    canvas.save();
+    canvas.beginPath();
+    canvas.arc(centroid[0], centroid[1], radius, 0, 2 * Math.PI);
+    if (fill) {
+        canvas.fill();
+    }
+    canvas.globalAlpha = alpha;
+    canvas.lineWidth = linewidth;
+    canvas.strokeStyle = color;
+    canvas.stroke();
+    canvas.restore();
+}
+
+function draw_tangent(canvas, p, theta, color) {
+    canvas.save();
+    canvas.beginPath();
+    canvas.moveTo(p.x, p.y);
+    canvas.lineTo(p.x + 44 * Math.cos(theta), p.y + 44 * Math.sin(theta));
+    canvas.strokeStyle = color;
+    canvas.lineWidth = 1;
+    canvas.setLineDash([6, 4]);
+    canvas.stroke();
+    canvas.setLineDash([]);
+    canvas.restore();
 }
 
 tangentAngles[2] = tangent3Input.value * Math.PI / 180;

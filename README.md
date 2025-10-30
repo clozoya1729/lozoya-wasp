@@ -133,7 +133,6 @@ These are chosen for clarity of visualization and stable animation timing on a c
 - Collision model is circle vs ray only. No polygon meshes or SDF.
 
 <!--
----
 
 ## Citation
 
@@ -145,6 +144,7 @@ If you use WASP-JS in academic work, please cite the Zenodo DOI.
   doi       = {xx.xxxx/zenodo.xxxxx},
   url       = {https://github.com/<USER>/wasp-js}
 }
+
 -->
 
 ---

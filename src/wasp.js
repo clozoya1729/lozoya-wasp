@@ -396,7 +396,7 @@ function draw_line(canvas, start, end, color = '#888', linewidth = 1, alpha = 1)
     canvas.stroke();
 }
 
-function draw_tangent(canvas, start, theta, color='#888', linewidth=linewidth, alpha=1) {
+function draw_tangent(canvas, start, theta, color='#888', linewidth=1, alpha=1) {
     canvas.save();
     canvas.strokeStyle = color;
     canvas.lineWidth = linewidth;

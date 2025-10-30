@@ -328,9 +328,10 @@ function draw() {
     draw_circle(ctx, 8, [points[1].x, points[1].y], color = "#43a047");
     draw_text(ctx, [points[2].x - 34, points[2].y + 24], 'Target (P3)', font='10px', color="#fff");
     draw_text(ctx, [points[1].x - 38, points[1].y - 16], 'Waypoint (P2)', font='10px', color='#fff');
-    ctx.save();
-    ctx.translate(points[0].x, points[0].y);
-    ctx.rotate(tangentAngles[0]);
+    draw_text(ctx, [points[0].x - 55, points[0].y - 22], 'Agent (P1)', '10px', '#fff');
+    // ctx.save();
+    // ctx.translate(points[0].x, points[0].y);
+    // ctx.rotate(tangentAngles[0]);
     // ctx.beginPath();
     // ctx.moveTo(-6, -6);
     // ctx.lineTo(6, 0);
@@ -341,13 +342,10 @@ function draw() {
     // ctx.strokeStyle = "#fff";
     // ctx.lineWidth = 1;
     // ctx.stroke();
-    ctx.font = "10px";
-    ctx.fillStyle = "#fff";
-    ctx.rotate(-tangentAngles[0]);
-    ctx.fillText("Agent (P1)", -55, -22);
-    ctx.restore();
-    ctx.save();
-    ctx.beginPath();
+    // ctx.rotate(-tangentAngles[0]);
+    // ctx.restore();
+    // ctx.save();
+    // ctx.beginPath();
     /*
     ctx.arc(points[0].x, points[0].y, 100, 0, 2 * Math.PI);
     ctx.strokeStyle = "#00bcd4";
@@ -356,9 +354,9 @@ function draw() {
     ctx.fillStyle = "#00bcd4";
     ctx.fill();
      */
-    ctx.globalAlpha = 1;
-    ctx.stroke();
-    ctx.restore();
+    // ctx.globalAlpha = 1;
+    // ctx.stroke();
+    // ctx.restore();
     ctx.save();
     ctx.beginPath();
     for (let t = 0; t <= 1.001; t += 0.01) {
@@ -377,6 +375,10 @@ function draw() {
     draw_circle(ctx, blobRadius, [blobX, blobY]);
 }
 
+function draw_curve(canvas, curve, color='#888', linewidth=1, alpha=1) {
+
+}
+
 function draw_text(canvas, coordinate, text, font, color) {
     canvas.save();
     canvas.font = font;
@@ -385,7 +387,7 @@ function draw_text(canvas, coordinate, text, font, color) {
     canvas.restore();
 }
 
-function draw_line(canvas, start, end, color = '#888', linewidth = 1, alpha = 1) {
+function draw_line(canvas, start, end, color='#888', linewidth=1, alpha=1) {
     canvas.save();
     canvas.strokeStyle = color;
     canvas.lineWidth = linewidth;

@@ -19,6 +19,7 @@ WASP is a lightweight local path planning library that computes smooth and dynam
 geometrically adapting a single intermediate waypoint.
 The included HTML file demonstrates a single agent navigating from a start pose to a target while dynamically adjusting
 its adaptive waypoint to avoid obstacles detected through simulated LiDAR rays.
+
 ---
 
 ## Quick start

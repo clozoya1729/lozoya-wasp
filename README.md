@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/wasp.png" width="175">
+  <img src="_assets/wasp.png" width="175">
 </p>
 
 # wasp-js
@@ -11,7 +11,7 @@
 
 **Waypoint Adaptive Spline Planner Demo (HTML+JS)**
 
-![WASP Screenshot](assets/screenshot.png)
+![WASP Screenshot](_assets/screenshot.png)
 
 A self-contained JavaScript library and HTML demo implementing the Waypoint Adaptive Spline Planner (WASP) algorithm by
 Christian Lozoya.
@@ -115,18 +115,18 @@ For each animation frame:
 ## Figures
 
 **Unobstructed case**  
-![WASP Screenshot](assets/example-unobstructed.png)
+![WASP Screenshot](_assets/example-unobstructed.png)
 
 With no LiDAR hits, P2 coincides with P3 and the agent follows a smooth quintic toward the target heading at P3.
 
 **Obstructed case**  
-![WASP Screenshot](assets/example-obstructed.png)
+![WASP Screenshot](_assets/example-obstructed.png)
 
 LiDAR detects impending collision, P2 is shifted to the side with fewer hits, and a new quintic is built. The agent
 follows the detour until the clear timer expires.
 
 **Multi-agent illustration**  
-![WASP Screenshot](assets/example-multi-agent.png)
+![WASP Screenshot](_assets/example-multi-agent.png)
 
 Conceptual scene demonstrating distinct paths for multiple agents. The demo’s code animates a single agent; this figure
 is illustrative for discussion.

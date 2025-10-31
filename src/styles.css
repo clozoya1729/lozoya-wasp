@@ -19,3 +19,9 @@ canvas {
 label {
     margin-right: 18px;
 }
+
+#form-parameters label {
+    display: block;
+    margin-bottom: 6px;
+}
+

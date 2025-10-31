@@ -1,3 +1,6 @@
+import {evaluate_quintic_2d, fit_quintic, tangent_vector, quintic_tangent} from './math.js';
+import {draw_circle, draw_curve, draw_line, draw_tangent, draw_text} from "./canvas.js";
+
 const NUM_LIDAR = 9;
 const LIDAR_RANGE = 60;
 const LIDAR_FOV = Math.PI / 2;
@@ -74,42 +77,6 @@ function sync_svg(clone, pos, theta, size) {
     clone.style.left = left + 'px';
     clone.style.top = top + 'px';
     if (theta != null) clone.style.transform = 'rotate(' + (theta * 180 / Math.PI) + 'deg)';
-}
-
-function tangent_vector(theta, mag) {
-    return {x: mag * Math.cos(theta), y: mag * Math.sin(theta)};
-}
-
-function fit_quintic(Pa, va, Pb, vb) {
-    const A = [
-        [1, 0, 0, 0, 0, 0],
-        [0, 1, 0, 0, 0, 0],
-        [0, 0, 2, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1],
-        [0, 1, 2, 3, 4, 5],
-        [0, 0, 2, 6, 12, 20]
-    ];
-
-    function solve(Pa, va, Pb, vb) {
-        const b = [Pa, va, 0, Pb, vb, 0];
-        return math.lusolve(A, b).map(r => r[0]);
-    }
-
-    return {cx: solve(Pa.x, va.x, Pb.x, vb.x), cy: solve(Pa.y, va.y, Pb.y, vb.y)};
-}
-
-function evaluate_quintic(coefs, t) {
-    return coefs[0] + coefs[1] * t + coefs[2] * t ** 2 + coefs[3] * t ** 3 + coefs[4] * t ** 4 + coefs[5] * t ** 5;
-}
-
-function evaluate_quintic_2d(poly, t) {
-    return {x: evaluate_quintic(poly.cx, t), y: evaluate_quintic(poly.cy, t)};
-}
-
-function quintic_tangent(poly, t) {
-    const dx = poly.cx[1] + 2 * poly.cx[2] * t + 3 * poly.cx[3] * t ** 2 + 4 * poly.cx[4] * t ** 3 + 5 * poly.cx[5] * t ** 4;
-    const dy = poly.cy[1] + 2 * poly.cy[2] * t + 3 * poly.cy[3] * t ** 2 + 4 * poly.cy[4] * t ** 3 + 5 * poly.cy[5] * t ** 4;
-    return Math.atan2(dy, dx);
 }
 
 function compute_arc_length_table(spline, segments = 200) {
@@ -319,15 +286,15 @@ function draw() {
         let angle = lidarAngles[i];
         let x1 = points[0].x + LIDAR_RANGE * Math.cos(angle);
         let y1 = points[0].y + LIDAR_RANGE * Math.sin(angle);
-        draw_line(ctx, [points[0].x, points[0].y], [x1, y1], color = '#4dd0e1', 1, 0.5);
+        draw_line(ctx, [points[0].x, points[0].y], [x1, y1], '#4dd0e1', 1, 0.5);
     }
     for (let hit of lidarHits) {
         draw_circle(ctx, 3, [hit.x, hit.y], '#f00', 1, 1, true)
     }
-    draw_circle(ctx, 4, [points[2].x, points[2].y], color = '#1976d2')
-    draw_circle(ctx, 8, [points[1].x, points[1].y], color = "#43a047");
-    draw_text(ctx, [points[2].x - 34, points[2].y + 24], 'Target (P3)', font='10px', color="#fff");
-    draw_text(ctx, [points[1].x - 38, points[1].y - 16], 'Waypoint (P2)', font='10px', color='#fff');
+    draw_circle(ctx, 4, [points[2].x, points[2].y], '#1976d2')
+    draw_circle(ctx, 8, [points[1].x, points[1].y], "#43a047");
+    draw_text(ctx, [points[2].x - 34, points[2].y + 24], 'Target (P3)', '10px', "#fff");
+    draw_text(ctx, [points[1].x - 38, points[1].y - 16], 'Waypoint (P2)', '10px', '#fff');
     draw_text(ctx, [points[0].x - 55, points[0].y - 22], 'Agent (P1)', '10px', '#fff');
     // ctx.save();
     // ctx.translate(points[0].x, points[0].y);
@@ -373,57 +340,6 @@ function draw() {
     draw_tangent(ctx, points[1], tangentAngles[1], "#43a047");
     draw_tangent(ctx, points[2], tangentAngles[2], "#1976d2");
     draw_circle(ctx, blobRadius, [blobX, blobY]);
-}
-
-function draw_curve(canvas, curve, color='#888', linewidth=1, alpha=1) {
-
-}
-
-function draw_text(canvas, coordinate, text, font, color) {
-    canvas.save();
-    canvas.font = font;
-    canvas.fillStyle = color;
-    canvas.fillText(text, coordinate[0], coordinate[1]);
-    canvas.restore();
-}
-
-function draw_line(canvas, start, end, color='#888', linewidth=1, alpha=1) {
-    canvas.save();
-    canvas.strokeStyle = color;
-    canvas.lineWidth = linewidth;
-    canvas.globalAlpha = alpha;
-    canvas.beginPath();
-    canvas.moveTo(start[0], start[1]);
-    canvas.lineTo(end[0], end[1]);
-    canvas.stroke();
-}
-
-function draw_tangent(canvas, start, theta, color='#888', linewidth=1, alpha=1) {
-    canvas.save();
-    canvas.strokeStyle = color;
-    canvas.lineWidth = linewidth;
-    canvas.globalAlpha = alpha;
-    canvas.beginPath();
-    canvas.moveTo(start.x, start.y);
-    canvas.lineTo(start.x + 44 * Math.cos(theta), start.y + 44 * Math.sin(theta));
-    canvas.setLineDash([6, 4]);
-    canvas.stroke();
-    canvas.setLineDash([]);
-    canvas.restore();
-}
-
-function draw_circle(canvas, radius, centroid, color = '#6d1b7b', linewidth = 1, alpha = 1, fill = false) {
-    canvas.save();
-    canvas.globalAlpha = alpha;
-    canvas.lineWidth = linewidth;
-    canvas.strokeStyle = color;
-    canvas.beginPath();
-    canvas.arc(centroid[0], centroid[1], radius, 0, 2 * Math.PI);
-    if (fill) {
-        canvas.fill();
-    }
-    canvas.stroke();
-    canvas.restore();
 }
 
 tangentAngles[2] = tangent3Input.value * Math.PI / 180;

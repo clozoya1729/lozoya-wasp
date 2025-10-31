@@ -7,14 +7,12 @@
     <script src="https://cdn.jsdelivr.net/npm/mathjs@11.9.1/lib/browser/math.js"></script>
 </head>
 <body>
-<div id="ui">
-    <label>
-        Target Tangent at P3 (deg):
-        <input id="tangent3" type="number" value="0" min="-180" max="180" step="1">
-    </label>
-</div>
+<label>
+    Target Tangent at P3 (deg):
+    <input id="tangent3" type="number" value="0" min="-180" max="180" step="1">
+</label>
 <svg id="agent-template" viewBox="0 0 500 500"
-     style="position:absolute; left:0px; top:0px; width:0px; height:0px; overflow:hidden;">
+     style="position:absolute; left:0; top:0; width:0; height:0; overflow:hidden;">
     <g transform="translate(0,0)">
         <circle cx="0" cy="0" r="10" fill="#4ade80"/>
         <g transform="rotate(35)">
@@ -38,7 +36,24 @@
         </g>
     </g>
 </svg>
-<canvas id="canvas" width="800" height="420"></canvas>
-<script src="wasp.js"></script>
+<div style="display: flex">
+    <div id="plots" style="display:flex;display:none; flex-direction: column; gap: 0px;">
+        <div style="display:flex; gap:0px;">
+            <div id="plot-velocity" style="width: 400px; height: 400px;"></div>
+            <div id="plot-acceleration" style="width: 400px; height: 400px;"></div>
+            <div id="plot-jerk" style="width: 400px; height: 400px;"></div>
+        </div>
+        <div style="display:flex; gap:0px;">
+            <div id="plot-angular-velocity" style="width: 400px; height: 200px;"></div>
+            <div id="plot-angular-acceleration" style="width: 400px; height: 200px;"></div>
+            <div id="plot-angular-jerk" style="width: 400px; height: 200px;"></div>
+        </div>
+    </div>
+    <canvas id="canvas" width="800" height="420"></canvas>
+</div>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="module" src="wasp.js"></script>
 </body>
 </html>

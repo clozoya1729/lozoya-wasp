@@ -153,3 +153,6 @@ ENV/
 env.bak/
 venv.bak/
 
+# misc
+ignore/*
+

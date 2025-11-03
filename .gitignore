@@ -154,5 +154,5 @@ env.bak/
 venv.bak/
 
 # misc
-ignore/*
+_ignore/*
 

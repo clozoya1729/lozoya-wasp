@@ -112,6 +112,51 @@ For each animation frame:
 
 ---
 
+### Obstacles
+
+`Obstacle` objects define static or dynamic circular obstacles in the simulation.
+
+#### Example
+
+```js
+import { Obstacle } from './Obstacle.js';
+
+const obstacleStatic = new Obstacle({
+    positionX: 100,
+    positionY: 200,
+    radius: 30,
+    colorFill: 'gray',
+    name: 'Static'
+});
+
+const obstacleDynamic = new Obstacle({
+    positionX: 50,
+    positionY: 80,
+    radius: 20,
+    velocityX: 15,
+    colorFill: 'orange',
+    name: 'Dynamic'
+});
+
+// Update and render
+obstacleDynamic.step(dt);
+obstacleDynamic.draw(ctx);
+```
+
+#### Parameters
+
+* `positionX`, `positionY`: center coordinates *(default: `0`)*
+* `radius`: circle radius *(default: `30`)*
+* `velocityX`, `velocityY`: linear velocity per second *(default: `0`)*
+* `colorFill`: fill color *(default: `'black'`)*
+* `colorOutline`: stroke color or width *(default: `0`)*
+* `name`: label text *(default: `''`)*
+* `opacity`: transparency *(default: `1`)*
+
+Use **`.step(dt)`** for motion and **`.draw(ctx)`** to render.
+
+---
+
 ## Figures
 
 **Unobstructed case**  

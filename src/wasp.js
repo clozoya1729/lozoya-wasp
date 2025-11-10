@@ -1,22 +1,120 @@
-import {evaluate_quintic_2d, fit_quintic, tangent_vector, quintic_tangent} from './math.js';
-import {draw_circle, draw_curve, draw_line, draw_tangent, draw_text} from "./canvas.js";
+import {evaluate_quintic_2d, fit_quintic, quintic_tangent, tangent_vector} from './math.js';
+import {draw_circle, draw_line, draw_rectangle, draw_tangent, draw_text, draw_triangle} from "./canvas.js";
+import {Agent} from "./agent.js";
+import {Lidar} from "./sensor.js";
+import {Obstacle} from "./obstacle.js";
 
+let agents;
+let obstacles;
+let lastTimestamp = null;
+let animationActive = false;
+let simulationSpeed = 1;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const AGENTS_CONFIG = [
+    {
+        positionX: 100,
+        positionY: 350,
+        speed: 100,
+        targetX: 700, targetY: 100
+    },
+    {
+        positionX: 700,
+        positionY: 400,
+        speed: 60,
+        targetX: 100, targetY: 100
+    },
+]
+const OBSTACLES_CONFIG = [
+    {
+        positionX: 320,
+        positionY: 150,
+        radius: 60,
+    },
+    {
+        positionX: canvas.width + 30,
+        positionY: 200,
+        velocityX: -58,
+    },
+    // {
+    //     positionX: 800 + 30,
+    //     positionY: 200,
+    //     velocityX: -55,
+    // },
+    // {
+    //     positionX: 800 + 30,
+    //     positionY: 300,
+    //     velocityX: -50,
+    // },
+    // {
+    //     positionX: 800 + 30,
+    //     positionY: 100,
+    //     velocityX: -10,
+    // },
+    // {
+    //     positionX: 800 + 100,
+    //     positionY: 250,
+    //     velocityX: -40,
+    // },
+    // {
+    //     positionX: 800 / 1.75,
+    //     positionY: 0,
+    //     velocityY: 25,
+    // },
+    // {
+    //     positionX: 800 / 1.5,
+    //     positionY: -200,
+    //     velocityY: 30,
+    // },
+    // {
+    //     positionX: 800 / 3,
+    //     positionY: 100,
+    //     velocityY: 20,
+    // }
+];
+
+/*
+ TODO: refactor into respective classes
+ */
+// lidar
+let lidar = new Lidar();
 const NUM_LIDAR = 9;
 const LIDAR_RANGE = 60;
 const LIDAR_FOV = Math.PI / 2;
+//agent
 const AVOIDANCE_RESET_DELAY = 500;
 const P2_AVOID_DIST = 40;
 const P2_SIDE_DIST = -40;
 let arcLengthTable = [];
 let agentArcLen = 0;
-let agentSpeed = 30;
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+let agentSpeed = 60;
 const tangent3Input = document.getElementById('tangent3');
-let blobY = 200;
+const P1_start = {x: 100, y: 350};
+const P1_start_theta = -Math.PI / 3;
+const P3 = {x: 700, y: 100};
+const tangentScaleFrac = 0.5;
+let tangentAngles = [P1_start_theta, 0, 0];
+let points = [{...P1_start}, {...P3}, {...P3}];
+let currentSpline = null;
+let agentDots = [];
+let lastDotTime = null;
+let avoidanceActive = false;
+let avoidanceRestore = false;
+let avoidanceClearTime = null;
+const agentSvg = create_agent_svg_clone({size: 100, anchor: 'origin'});
+tangentAngles[2] = tangent3Input.value * Math.PI / 180;
+tangent3Input.addEventListener('input', () => {
+    tangentAngles[2] = tangent3Input.value * Math.PI / 180;
+    if (points[1].x === points[2].x && points[1].y === points[2].y) {
+        update_spline_from_p1_to_p2();
+        draw();
+    }
+});
+// obstacle
 let blobRadius = 30;
-let blobSpeed = 58;
 let blobX = canvas.width + blobRadius;
+let blobY = 200;
+let blobSpeed = 58;
 const OBSTACLE = {x: 320, y: 150, r: 60};
 const BLOB = {
     get x() {
@@ -25,22 +123,9 @@ const BLOB = {
         return blobY;
     }, r: blobRadius
 };
-const P1_start = {x: 100, y: 350};
-const P1_start_theta = -Math.PI / 3;
-const P3 = {x: 700, y: 100};
-const tangentScaleFrac = 0.5;
-let tangentAngles = [P1_start_theta, 0, 0];
-let points = [{...P1_start}, {...P3}, {...P3}];
-let lastTimestamp = null;
-let animationActive = false;
-let currentSpline = null;
-let agentDots = [];
-let lastDotTime = null;
-let avoidanceActive = false;
-let avoidanceRestore = false;
-let avoidanceClearTime = null;
-const agentSvg = create_agent_svg_clone({size: 100, anchor: 'origin'});
 const blobSvg = create_agent_svg_clone({size: 4 * blobRadius, anchor: 'origin'});
+
+// end TODO
 
 function create_agent_svg_clone(opts = {}) {
     const size = opts.size ?? 100;
@@ -183,11 +268,12 @@ function update_spline_from_p1_to_p2() {
     agentArcLen = 0; // always start agent at t=0 for new spline
 }
 
-function animate_p1(ts) {
+function animate(ts) {
     if (!animationActive) return;
     if (!lastTimestamp) lastTimestamp = ts;
-    let dt = Math.min((ts - lastTimestamp) / 1000, 0.06);
+    let dt = Math.min((ts - lastTimestamp) / 1000, 0.06) * simulationSpeed;
     lastTimestamp = ts;
+    for (const obs of obstacles) obs.step(dt);
     blobX -= blobSpeed * dt;
     if (blobX < -blobRadius) blobX = canvas.width + blobRadius;
     let theta = tangentAngles[0];
@@ -256,30 +342,19 @@ function animate_p1(ts) {
     points[0].x = p.x;
     points[0].y = p.y;
     tangentAngles[0] = thetaAgent;
-    if (lastDotTime === null) lastDotTime = ts;
-    if (ts - lastDotTime >= 100 || agentDots.length === 0) {
-        agentDots.push({x: p.x, y: p.y});
-        lastDotTime = ts;
+    for (const agent of agents) {
+        agent.step(ts, dt, p);
     }
     sync_svg(agentSvg, points[0], tangentAngles[0], 100);
     sync_svg(blobSvg, {x: BLOB.x, y: BLOB.y}, 0, 3 * blobRadius);
     draw();
-    if (animationActive) requestAnimationFrame(animate_p1);
+    if (animationActive) requestAnimationFrame(animate);
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (agentDots.length > 0) {
-        ctx.save();
-        ctx.fillStyle = "#fff";
-        for (let i = 0; i < agentDots.length; ++i) {
-            ctx.beginPath();
-            ctx.arc(agentDots[i].x, agentDots[i].y, 1, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-        ctx.restore();
-    }
-    draw_circle(ctx, OBSTACLE.r, [OBSTACLE.x, OBSTACLE.y], '#a40');
+    for (const obstacle of obstacles) obstacle.draw(ctx);
+    for (const agent of agents) agent.draw(ctx);
     let theta = tangentAngles[0];
     let {hits: lidarHits, angles: lidarAngles} = get_lidar_hits(points[0], theta);
     for (let i = 0; i < lidarAngles.length; ++i) {
@@ -291,39 +366,15 @@ function draw() {
     for (let hit of lidarHits) {
         draw_circle(ctx, 3, [hit.x, hit.y], '#f00', 1, 1, true)
     }
-    draw_circle(ctx, 4, [points[2].x, points[2].y], '#1976d2')
-    draw_circle(ctx, 8, [points[1].x, points[1].y], "#43a047");
     draw_text(ctx, [points[2].x - 34, points[2].y + 24], 'Target (P3)', '10px', "#fff");
     draw_text(ctx, [points[1].x - 38, points[1].y - 16], 'Waypoint (P2)', '10px', '#fff');
     draw_text(ctx, [points[0].x - 55, points[0].y - 22], 'Agent (P1)', '10px', '#fff');
-    // ctx.save();
-    // ctx.translate(points[0].x, points[0].y);
-    // ctx.rotate(tangentAngles[0]);
-    // ctx.beginPath();
-    // ctx.moveTo(-6, -6);
-    // ctx.lineTo(6, 0);
-    // ctx.lineTo(-6, 6);
-    // ctx.closePath();
-    // ctx.fillStyle = "#0ff";
-    // ctx.fill();
-    // ctx.strokeStyle = "#fff";
-    // ctx.lineWidth = 1;
-    // ctx.stroke();
-    // ctx.rotate(-tangentAngles[0]);
-    // ctx.restore();
-    // ctx.save();
-    // ctx.beginPath();
-    /*
-    ctx.arc(points[0].x, points[0].y, 100, 0, 2 * Math.PI);
-    ctx.strokeStyle = "#00bcd4";
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = "#00bcd4";
-    ctx.fill();
-     */
-    // ctx.globalAlpha = 1;
-    // ctx.stroke();
-    // ctx.restore();
+    draw_waypoint(ctx, 0, points[0], tangentAngles[0], "#0ff");
+    draw_waypoint(ctx, 8, points[1], tangentAngles[1], "#43a047");
+    draw_waypoint(ctx, 4, points[2], tangentAngles[2], "#1976d2");
+    draw_rectangle(ctx, {coordinate: [points[0].x, points[0].y], orientation: tangentAngles[0], opacityFill: 0.5});
+    // draw_triangle(ctx, {coordinate: [points[0].x, points[0].y], orientation: tangentAngles[0]});
+    draw_circle(ctx, LIDAR_RANGE, [points[0].x, points[0].y], '#00bcd4', 1, 0.1, true);
     ctx.save();
     ctx.beginPath();
     for (let t = 0; t <= 1.001; t += 0.01) {
@@ -336,21 +387,18 @@ function draw() {
     ctx.setLineDash([6, 4]);
     ctx.stroke();
     ctx.restore();
-    draw_tangent(ctx, points[0], tangentAngles[0], "#0ff");
-    draw_tangent(ctx, points[1], tangentAngles[1], "#43a047");
-    draw_tangent(ctx, points[2], tangentAngles[2], "#1976d2");
-    draw_circle(ctx, blobRadius, [blobX, blobY]);
 }
 
-tangentAngles[2] = tangent3Input.value * Math.PI / 180;
-tangent3Input.addEventListener('input', () => {
-    tangentAngles[2] = tangent3Input.value * Math.PI / 180;
-    if (points[1].x === points[2].x && points[1].y === points[2].y) {
-        update_spline_from_p1_to_p2();
-        draw();
-    }
-});
+function draw_waypoint(ctx, radius, position, orientation, color) {
+    draw_circle(ctx, radius, [position.x, position.y], color);
+    draw_tangent(ctx, position, orientation, color);
+
+}
+
 window.onload = () => {
+    /*
+    TODO: refactor into Agent class
+     */
     points[0] = {...P1_start};
     tangentAngles[0] = P1_start_theta;
     points[1] = {...P3};
@@ -363,7 +411,10 @@ window.onload = () => {
     lastDotTime = null;
     avoidanceActive = false;
     avoidanceRestore = false;
+    // end TODO
+    agents = AGENTS_CONFIG.map(cfg => new Agent(cfg));
+    obstacles = OBSTACLES_CONFIG.map(cfg => new Obstacle(cfg));
     update_spline_from_p1_to_p2();
     draw();
-    requestAnimationFrame(animate_p1);
+    requestAnimationFrame(animate);
 };

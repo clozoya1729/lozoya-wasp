@@ -1,5 +1,5 @@
 import {evaluate_quintic_2d, fit_quintic, quintic_tangent, tangent_vector} from './math.js';
-import {draw_circle, draw_line, draw_rectangle, draw_tangent, draw_text, draw_triangle} from "./canvas.js";
+import {draw_circle, draw_curve, draw_line, draw_rectangle, draw_tangent, draw_text} from "./canvas.js";
 import {Agent} from "./agent.js";
 import {Lidar} from "./sensor.js";
 import {Obstacle} from "./obstacle.js";
@@ -268,6 +268,15 @@ function update_spline_from_p1_to_p2() {
     agentArcLen = 0; // always start agent at t=0 for new spline
 }
 
+function spline_get_points() {
+    let curvePoints = [];
+    for (let t = 0; t <= 1.001; t += 0.01) {
+        let pt = evaluate_quintic_2d(currentSpline, t);
+        curvePoints.push([pt.x, pt.y]);
+    }
+    return curvePoints;
+}
+
 function animate(ts) {
     if (!animationActive) return;
     if (!lastTimestamp) lastTimestamp = ts;
@@ -355,6 +364,7 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const obstacle of obstacles) obstacle.draw(ctx);
     for (const agent of agents) agent.draw(ctx);
+    let curvePoints = spline_get_points();
     let theta = tangentAngles[0];
     let {hits: lidarHits, angles: lidarAngles} = get_lidar_hits(points[0], theta);
     for (let i = 0; i < lidarAngles.length; ++i) {
@@ -373,20 +383,8 @@ function draw() {
     draw_waypoint(ctx, 8, points[1], tangentAngles[1], "#43a047");
     draw_waypoint(ctx, 4, points[2], tangentAngles[2], "#1976d2");
     draw_rectangle(ctx, {coordinate: [points[0].x, points[0].y], orientation: tangentAngles[0], opacityFill: 0.5});
-    // draw_triangle(ctx, {coordinate: [points[0].x, points[0].y], orientation: tangentAngles[0]});
     draw_circle(ctx, LIDAR_RANGE, [points[0].x, points[0].y], '#00bcd4', 1, 0.1, true);
-    ctx.save();
-    ctx.beginPath();
-    for (let t = 0; t <= 1.001; t += 0.01) {
-        let pt = evaluate_quintic_2d(currentSpline, t);
-        if (t === 0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
-    }
-    ctx.strokeStyle = "#ffd600";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([6, 4]);
-    ctx.stroke();
-    ctx.restore();
+    draw_curve(ctx, curvePoints, '#ffd600', 1, 1, [6, 4]);
 }
 
 function draw_waypoint(ctx, radius, position, orientation, color) {

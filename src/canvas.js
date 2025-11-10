@@ -13,8 +13,21 @@ function draw_circle(ctx, radius, centroid, color = '#6d1b7b', linewidth = 1, al
     ctx.restore();
 }
 
-function draw_curve(ctx, curve, color = '#888', linewidth = 1, alpha = 1) {
-
+function draw_curve(ctx, points, color = '#888', linewidth = 1, alpha = 1, dash = []) {
+    if (!points || points.length === 0) return;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = linewidth;
+    ctx.globalAlpha = alpha;
+    if (dash && dash.length) ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0], points[i][1]);
+    }
+    ctx.stroke();
+    if (dash && dash.length) ctx.setLineDash([]);
+    ctx.restore();
 }
 
 function draw_line(ctx, start, end, color = '#888', linewidth = 1, alpha = 1) {

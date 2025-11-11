@@ -1,4 +1,4 @@
-import {draw_circle, draw_text} from './canvas.js';
+import {draw_circle, draw_rectangle, draw_text} from './canvas.js';
 
 class Obstacle {
     constructor(parameters) {
@@ -41,6 +41,11 @@ class Obstacle {
             colorOutline: this.colorOutline,
             opacityFill: this.opacityFill,
             opacityOutline: this.opacityOutline,
+        });
+        draw_rectangle(ctx, {
+            coordinate: [this.positionX, this.positionY],
+            orientation: 0,
+            opacityFill: 0.5,
         });
         if (this.name) {
             draw_text(ctx, {

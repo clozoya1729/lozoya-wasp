@@ -11,6 +11,7 @@ class Lidar {
         this.fov = fov;
         this.history = [];  // store past readings for velocity estimation
         this.historyLength = bufferLength;
+        this.hits = [];
     }
 
     // Cast rays from position `pos` with heading `theta`, returns hits and angles
@@ -139,6 +140,10 @@ class Lidar {
             }
         }
         return v;
+    }
+
+    draw(ctx) {
+
     }
 }
 

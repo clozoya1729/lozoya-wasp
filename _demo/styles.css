@@ -5,23 +5,46 @@ body {
     font-size: 8pt;
 }
 
-canvas {
-    background: #000;
-    border-radius: 8px;
-    display: block;
-    margin: 16px 0;
+.dark {
+    canvas {
+        background: #000;
+        border-radius: 8px;
+        display: block;
+        margin: 16px 0;
+    }
+
+    #ui {
+        margin-bottom: 10px;
+    }
+
+    label {
+        margin-right: 18px;
+    }
+
+    #form-parameters label {
+        display: block;
+        margin-bottom: 6px;
+    }
 }
 
-#ui {
-    margin-bottom: 10px;
-}
+.light {
+    canvas {
+        background: #fff;
+        border-radius: 8px;
+        display: block;
+        margin: 16px 0;
+    }
 
-label {
-    margin-right: 18px;
-}
+    #ui {
+        margin-bottom: 10px;
+    }
 
-#form-parameters label {
-    display: block;
-    margin-bottom: 6px;
-}
+    label {
+        margin-right: 18px;
+    }
 
+    #form-parameters label {
+        display: block;
+        margin-bottom: 6px;
+    }
+}

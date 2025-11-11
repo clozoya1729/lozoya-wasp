@@ -14,8 +14,8 @@ class Lidar {
         this.hits = [];
     }
 
-    // Cast rays from position `pos` with heading `theta`, returns hits and angles
     getHits(pos, theta, obstacles) {
+        // Cast rays from position `pos` with heading `theta`, returns hits and angles
         let hits = [], angles = [];
         for (let i = 0; i < this.numRays; ++i) {
             let offset = (i / (this.numRays - 1) - 0.5) * this.fov;
@@ -58,14 +58,14 @@ class Lidar {
         return {x: x0 + t * dx, y: y0 + t * dy, dist: t};
     }
 
-    // Store new lidar data for velocity estimation
     updateHistory(ts, minFrontDist, minSideDist, minBehindDist) {
+        // Store new lidar data for velocity estimation
         this.history.push({time: ts, minFrontDist, minSideDist, minBehindDist});
         if (this.history.length > this.historyLength) this.history.shift();
     }
 
-    // Estimate velocities based on history (front, side, behind)
     estimateVelocities() {
+        // Estimate velocities based on history (front, side, behind)
         let frontVel = 0, sideVel = 0, behindVel = 0;
         if (this.history.length === this.historyLength) {
             let h0 = this.history[0], h2 = this.history[this.historyLength - 1];
@@ -88,8 +88,8 @@ class Lidar {
         this.historyLength = lidarBufferLength;
     }
 
-    // Aligned outputs: hits.length === numRays, each entry either null or {x,y,dist,angle}
     getHits2(pos, theta, obstacles) {
+        // Aligned outputs: hits.length === numRays, each entry either null or {x,y,dist,angle}
         const hits = new Array(this.numRays).fill(null);
         const angles = [];
         for (let i = 0; i < this.numRays; ++i) {
@@ -119,8 +119,8 @@ class Lidar {
         return {hits, angles};
     }
 
-    // Per-ray history update
     updateHistory2(ts, angles, hits) {
+        // Per-ray history update
         for (let i = 0; i < this.numRays; ++i) {
             const d = hits[i] ? hits[i].dist : this.range;
             this.history[i].push({time: ts, dist: d});
@@ -128,8 +128,8 @@ class Lidar {
         }
     }
 
-    // Returns array vel[i] for each ray (m/s along the ray: +away, −toward)
     estimateVelocities2() {
+        // Returns array vel[i] for each ray (m/s along the ray: +away, −toward)
         const v = new Array(this.numRays).fill(0);
         for (let i = 0; i < this.numRays; ++i) {
             const h = this.history[i];

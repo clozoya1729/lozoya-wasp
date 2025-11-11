@@ -21,6 +21,9 @@ class Agent {
         let p2SnapDistance = parameters.p2SnapDistance ?? 6;
         let collisionRadius = parameters.collisionCircle ?? 60;
         let collisionMargin = parameters.collisionMargin ?? 0;
+        let colorTrail = parameters.colorTrail ?? '#000';
+        let colorBodyFill = parameters.colorBodyFill ?? '#fff';
+        let colorBodyOutline = parameters.colorBodyOutline ?? '#888';
 
         this.name = name;
         this.p1 = {x: positionX, y: positionY};
@@ -44,10 +47,13 @@ class Agent {
         this.p2SnapDistance = p2SnapDistance;
         this.collisionRadius = collisionRadius;
         this.collisionMargin = collisionMargin;
+        this.colorBodyFill = colorBodyFill;
+        this.colorBodyOutline = colorBodyOutline;
         this.avoidActive = false;
         this.avoidRestore = false;
         this.avoidClearTime = null;
         this.trail = [];
+        this.colorTrail = colorTrail;
         this.lastTrailTime = null;
         this.svg = null;
         this._update_spline_from_p1_to_p2();
@@ -210,7 +216,13 @@ class Agent {
 
     draw(ctx) {
         for (let i = 0; i < this.trail.length; ++i) {
-            draw_circle(ctx, {radius: 0.4, centroid: [this.trail[i].x, this.trail[i].y]});
+            draw_circle(ctx, {
+                radius: 0.4,
+                centroid: [this.trail[i].x, this.trail[i].y],
+                colorOutline: this.colorTrail,
+                colorFill: this.colorTrail,
+                opacityFill: 1,
+            });
         }
         draw_circle(ctx, {
             radius: this.lidarRange,
@@ -222,19 +234,23 @@ class Agent {
         draw_rectangle(ctx, {
             coordinate: [this.p1.x, this.p1.y],
             orientation: this.orientation,
+            colorFill: this.colorBodyFill,
+            colorOutline: this.colorBodyOutline,
             opacityFill: 0.5
         });
         draw_circle(ctx, {
             radius: this.collisionRadius,
             centroid: [this.p1.x, this.p1.y],
             colorOutline: '#ff9800',
-            opacityFill: 0,
-            opacityOutline: 0.3
+            colorFill: '#ff9800',
+            opacityFill: 0.05,
+            opacityOutline: 0.3,
+            dash: [8, 8],
         });
         draw_text(ctx, {coordinate: [this.p1.x - 20, this.p1.y - 20], text: this.name});
     }
 
-    draw_waypoints(ctx, colors = {p1: '#0ff', p2: '#43a047', p3: '#1976d2'}) {
+    draw_waypoints(ctx, colors = {p1: '#0ff', p2: '#4a5', p3: '#258'}) {
         draw_circle(ctx, {radius: 0, centroid: [this.p1.x, this.p1.y], colorOutline: colors.p1, opacityFill: 0});
         draw_tangent(ctx, {
             start: [this.p1.x, this.p1.y],
@@ -247,6 +263,13 @@ class Agent {
         let thetaP2 = this._p2_is_p3() ? this.targetTangent : Math.atan2(this.p3.y - this.p2.y, this.p3.x - this.p2.x);
         draw_tangent(ctx, {start: [this.p2.x, this.p2.y], length: 44, angle: thetaP2, color: colors.p2, dash: [6, 4]});
         draw_circle(ctx, {radius: 4, centroid: [this.p3.x, this.p3.y], colorOutline: colors.p3, opacityFill: 0});
+        draw_tangent(ctx, {
+            start: [this.p3.x, this.p3.y],
+            length: 44,
+            angle: this.targetTangent,
+            color: colors.p3,
+            dash: [6, 4]
+        });
     }
 }
 

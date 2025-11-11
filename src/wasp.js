@@ -4,6 +4,28 @@ import {Agent} from "./agent.js";
 import {Lidar} from "./sensor.js";
 import {Obstacle} from "./obstacle.js";
 
+let themeDark = {
+    colorTrail: '#fff',
+    colorSpline: '#ffd600',
+    colorBodyOutline: '#fff',
+    colorBodyFill: '#888',
+    colorP1: '#0ff',
+    colorP2: '#43a047',
+    colorP3: '#1976d2',
+    colorLidarNoHit: '#4dd0e1'
+};
+let themeLight = {
+    colorTrail: '#000',
+    colorSpline: '#888',
+    colorBodyOutline: '#000',
+    colorBodyFill: '#888',
+    colorP1: '#0ff',
+    colorP2: '#43a047',
+    colorP3: '#1976d2',
+    colorLidarNoHit: '#08f'
+};
+let theme;
+
 let agents;
 let obstacles;
 let lastTimestamp = null;
@@ -88,7 +110,7 @@ const LIDAR_FOV = Math.PI / 2;
 const tangent3Input = document.getElementById('tangent3');
 tangent3Input.addEventListener('input', () => {
     let a = agents[0];
-    a.setTargetTangent(tangent3Input.value * Math.PI / 180);
+    a.set_target_tangent(tangent3Input.value * Math.PI / 180);
     draw();
 });
 
@@ -238,6 +260,7 @@ function draw() {
         for (const h of cast.hits) draw_circle(ctx, {
             radius: 3,
             centroid: [h.x, h.y],
+            colorOutline: '#a00',
             colorFill: '#f00',
             opacityFill: 1
         })
@@ -247,11 +270,20 @@ function draw() {
             const pt = evaluate_quintic_2d(agent.currentSpline, t);
             curvePoints.push([pt.x, pt.y]);
         }
-        draw_curve(ctx, curvePoints, {color: '#ffd600', dash: [2, 8]});
+        draw_curve(ctx, curvePoints, {
+            color: theme.colorSpline,
+            dash: [2, 8],
+        });
     }
 }
 
 window.onload = () => {
+    const themeDiv = document.getElementById('theme');
+    if (themeDiv.classList.contains('light')) {
+        theme = themeLight;
+    } else if (themeDiv.classList.contains('dark')) {
+        theme = themeDark;
+    }
     animationActive = true;
     lastTimestamp = null;
     agents = AGENTS_CONFIG.map(cfg => new Agent({
@@ -259,7 +291,10 @@ window.onload = () => {
         lidar: new Lidar(),
         lidarRange: LIDAR_RANGE,
         lidarFov: LIDAR_FOV,
-        numLidar: NUM_LIDAR
+        numLidar: NUM_LIDAR,
+        colorTrail: theme.colorTrail,
+        colorBodyFill: theme.colorBodyFill,
+        colorBodyOutline: theme.colorBodyOutline,
     }));
     for (const agent of agents) {
         agent.svg = create_agent_svg_clone({size: 100, anchor: 'origin'});

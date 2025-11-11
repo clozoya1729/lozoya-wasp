@@ -7,6 +7,7 @@ function draw_circle(ctx, parameters = {}) {
         opacityFill = 0.1,
         opacityOutline = 1,
         linewidth = 1,
+        dash = [],
     } = parameters;
     ctx.save();
     ctx.lineWidth = linewidth;
@@ -14,10 +15,12 @@ function draw_circle(ctx, parameters = {}) {
     ctx.globalAlpha = opacityOutline;
     ctx.beginPath();
     ctx.arc(centroid[0], centroid[1], radius, 0, 2 * Math.PI);
+    ctx.setLineDash(dash);
     ctx.stroke();
     ctx.globalAlpha = opacityFill;
     ctx.fillStyle = colorFill;
     ctx.fill();
+    ctx.setLineDash([]);
     ctx.restore();
 }
 

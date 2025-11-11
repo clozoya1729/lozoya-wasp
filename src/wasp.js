@@ -13,12 +13,14 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const AGENTS_CONFIG = [
     {
+        name: 'Agent 0',
         positionX: 100,
         positionY: 350,
         speed: 100,
         targetX: 700, targetY: 100
     },
     {
+        name: 'Agent 1',
         positionX: 700,
         positionY: 400,
         speed: 60,
@@ -27,11 +29,13 @@ const AGENTS_CONFIG = [
 ]
 const OBSTACLES_CONFIG = [
     {
+        name: 'Static',
         positionX: 320,
         positionY: 150,
         radius: 60,
     },
     {
+        name: 'Dynamic',
         positionX: canvas.width + 30,
         positionY: 200,
         velocityX: -58,
@@ -127,6 +131,7 @@ const blobSvg = create_agent_svg_clone({size: 4 * blobRadius, anchor: 'origin'})
 
 // end TODO
 
+// TODO: move to canvas.js
 function create_agent_svg_clone(opts = {}) {
     const size = opts.size ?? 100;
     const template = document.getElementById(opts.templateId || 'agent-template');
@@ -164,35 +169,9 @@ function sync_svg(clone, pos, theta, size) {
     if (theta != null) clone.style.transform = 'rotate(' + (theta * 180 / Math.PI) + 'deg)';
 }
 
-function compute_arc_length_table(spline, segments = 200) {
-    let table = [];
-    let prev = evaluate_quintic_2d(spline, 0);
-    let acc = 0;
-    table.push({t: 0, arcLen: 0});
-    for (let i = 1; i <= segments; ++i) {
-        let t = i / segments;
-        let pt = evaluate_quintic_2d(spline, t);
-        acc += Math.hypot(pt.x - prev.x, pt.y - prev.y);
-        table.push({t: t, arcLen: acc});
-        prev = pt;
-    }
-    return table;
-}
+// end TODO
 
-function get_t_for_arclength(table, s) {
-    if (s <= 0) return 0;
-    if (s >= table[table.length - 1].arcLen) return 1;
-    for (let i = 1; i < table.length; ++i) {
-        if (s <= table[i].arcLen) {
-            let t0 = table[i - 1].t, t1 = table[i].t;
-            let s0 = table[i - 1].arcLen, s1 = table[i].arcLen;
-            let frac = (s - s0) / (s1 - s0);
-            return t0 + frac * (t1 - t0);
-        }
-    }
-    return 1;
-}
-
+// TODO: move to sensor.js
 function get_lidar_hits(agent, theta) {
     let hits = [];
     let angles = [];
@@ -228,30 +207,10 @@ function ray_intersect(x0, y0, theta, cx, cy, r, maxRange) {
     return {x: x0 + t * dx, y: y0 + t * dy, dist: t};
 }
 
-function compute_avoid_p2(p1, p3, lidarHits) {
-    let fx = p3.x - p1.x;
-    let fy = p3.y - p1.y;
-    let fwd_mag = Math.hypot(fx, fy);
-    if (fwd_mag < 1e-6) return {x: p1.x + P2_AVOID_DIST, y: p1.y};
-    let fwd = {x: fx / fwd_mag, y: fy / fwd_mag};
-    let left = {x: -fwd.y, y: fwd.x};
-    let left_count = 0, right_count = 0;
-    for (let hit of lidarHits) {
-        let vx = hit.x - p1.x;
-        let vy = hit.y - p1.y;
-        let det = fwd.x * vy - fwd.y * vx;
-        if (det > 0) left_count++;
-        else if (det < 0) right_count++;
-    }
-    let side = 0;
-    if (left_count > right_count) side = 1;
-    else if (right_count > left_count) side = -1;
-    return {
-        x: p1.x + fwd.x * P2_AVOID_DIST + side * left.x * P2_SIDE_DIST,
-        y: p1.y + fwd.y * P2_AVOID_DIST + side * left.y * P2_SIDE_DIST
-    };
-}
+// end TODO
 
+
+// TODO: move to spline.js
 function update_spline_from_p1_to_p2() {
     const segLen = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y) * tangentScaleFrac;
     const va = tangent_vector(tangentAngles[0], segLen);
@@ -275,6 +234,61 @@ function spline_get_points() {
         curvePoints.push([pt.x, pt.y]);
     }
     return curvePoints;
+}
+
+function get_t_for_arclength(table, s) {
+    if (s <= 0) return 0;
+    if (s >= table[table.length - 1].arcLen) return 1;
+    for (let i = 1; i < table.length; ++i) {
+        if (s <= table[i].arcLen) {
+            let t0 = table[i - 1].t, t1 = table[i].t;
+            let s0 = table[i - 1].arcLen, s1 = table[i].arcLen;
+            let frac = (s - s0) / (s1 - s0);
+            return t0 + frac * (t1 - t0);
+        }
+    }
+    return 1;
+}
+
+function compute_arc_length_table(spline, segments = 200) {
+    let table = [];
+    let prev = evaluate_quintic_2d(spline, 0);
+    let acc = 0;
+    table.push({t: 0, arcLen: 0});
+    for (let i = 1; i <= segments; ++i) {
+        let t = i / segments;
+        let pt = evaluate_quintic_2d(spline, t);
+        acc += Math.hypot(pt.x - prev.x, pt.y - prev.y);
+        table.push({t: t, arcLen: acc});
+        prev = pt;
+    }
+    return table;
+}
+
+// end TODO
+
+function compute_avoid_p2(p1, p3, lidarHits) {
+    let fx = p3.x - p1.x;
+    let fy = p3.y - p1.y;
+    let fwd_mag = Math.hypot(fx, fy);
+    if (fwd_mag < 1e-6) return {x: p1.x + P2_AVOID_DIST, y: p1.y};
+    let fwd = {x: fx / fwd_mag, y: fy / fwd_mag};
+    let left = {x: -fwd.y, y: fwd.x};
+    let left_count = 0, right_count = 0;
+    for (let hit of lidarHits) {
+        let vx = hit.x - p1.x;
+        let vy = hit.y - p1.y;
+        let det = fwd.x * vy - fwd.y * vx;
+        if (det > 0) left_count++;
+        else if (det < 0) right_count++;
+    }
+    let side = 0;
+    if (left_count > right_count) side = 1;
+    else if (right_count > left_count) side = -1;
+    return {
+        x: p1.x + fwd.x * P2_AVOID_DIST + side * left.x * P2_SIDE_DIST,
+        y: p1.y + fwd.y * P2_AVOID_DIST + side * left.y * P2_SIDE_DIST
+    };
 }
 
 function animate(ts) {
@@ -371,25 +385,31 @@ function draw() {
         let angle = lidarAngles[i];
         let x1 = points[0].x + LIDAR_RANGE * Math.cos(angle);
         let y1 = points[0].y + LIDAR_RANGE * Math.sin(angle);
-        draw_line(ctx, [points[0].x, points[0].y], [x1, y1], '#4dd0e1', 1, 0.5);
+        draw_line(ctx, {start: [points[0].x, points[0].y], end: [x1, y1], color: '#4dd0e1', opacity: 0.6,});
     }
     for (let hit of lidarHits) {
-        draw_circle(ctx, 3, [hit.x, hit.y], '#f00', 1, 1, true)
+        draw_circle(ctx, {radius: 3, centroid: [hit.x, hit.y], colorFill: '#f00', opacityFill: 1,})
     }
-    draw_text(ctx, [points[2].x - 34, points[2].y + 24], 'Target (P3)', '10px', "#fff");
-    draw_text(ctx, [points[1].x - 38, points[1].y - 16], 'Waypoint (P2)', '10px', '#fff');
-    draw_text(ctx, [points[0].x - 55, points[0].y - 22], 'Agent (P1)', '10px', '#fff');
+    draw_text(ctx, {coordinate: [points[2].x - 34, points[2].y + 24], text: 'Target (P3)', opacity: 0.8});
+    draw_text(ctx, {coordinate: [points[1].x - 38, points[1].y - 16], text: 'Waypoint (P2)', opacity: 0.8});
+    draw_text(ctx, {coordinate: [points[0].x - 55, points[0].y - 22], text: 'Agent (P1)', opacity: 0.8});
     draw_waypoint(ctx, 0, points[0], tangentAngles[0], "#0ff");
     draw_waypoint(ctx, 8, points[1], tangentAngles[1], "#43a047");
     draw_waypoint(ctx, 4, points[2], tangentAngles[2], "#1976d2");
     draw_rectangle(ctx, {coordinate: [points[0].x, points[0].y], orientation: tangentAngles[0], opacityFill: 0.5});
-    draw_circle(ctx, LIDAR_RANGE, [points[0].x, points[0].y], '#00bcd4', 1, 0.1, true);
-    draw_curve(ctx, curvePoints, '#ffd600', 1, 1, [6, 4]);
+    draw_circle(ctx, {
+        radius: LIDAR_RANGE,
+        centroid: [points[0].x, points[0].y],
+        colorOutline: '#00bcd4',
+        opacityFill: 0,
+        opacityOutline: 0.2,
+    });
+    draw_curve(ctx, curvePoints, {color: '#ffd600', dash: [2, 8]});
 }
 
 function draw_waypoint(ctx, radius, position, orientation, color) {
-    draw_circle(ctx, radius, [position.x, position.y], color);
-    draw_tangent(ctx, position, orientation, color);
+    draw_circle(ctx, {radius: radius, centroid: [position.x, position.y], colorOutline: color, opacityFill: 0,});
+    draw_tangent(ctx, {start: [position.x, position.y], length: 44, angle: orientation, color: color, dash: [6, 4]});
 
 }
 

@@ -1,3 +1,5 @@
+import {draw_circle} from './canvas.js';
+
 class Agent {
     constructor(parameters = {}) {
         let {
@@ -46,14 +48,12 @@ class Agent {
 
     draw_trail(ctx) {
         if (this.trail.length > 0) {
-            ctx.save();
-            ctx.fillStyle = "#fff";
             for (let i = 0; i < this.trail.length; ++i) {
-                ctx.beginPath();
-                ctx.arc(this.trail[i].x, this.trail[i].y, 1, 0, 2 * Math.PI);
-                ctx.fill();
+                draw_circle(ctx, {
+                    radius: 0.4,
+                    centroid: [this.trail[i].x, this.trail[i].y],
+                });
             }
-            ctx.restore();
         }
     }
 

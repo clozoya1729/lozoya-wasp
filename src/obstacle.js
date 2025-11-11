@@ -1,4 +1,4 @@
-import {draw_circle} from './canvas.js';
+import {draw_circle, draw_text} from './canvas.js';
 
 class Obstacle {
     constructor(parameters) {
@@ -19,6 +19,7 @@ class Obstacle {
         this.radius = radius;
         this.velocityX = velocityX;
         this.velocityY = velocityY;
+        // render
         this.colorFill = colorFill;
         this.colorOutline = colorOutline;
         this.name = name;
@@ -33,21 +34,20 @@ class Obstacle {
     }
 
     draw(ctx) {
-        draw_circle(ctx, this.radius, [this.positionX, this.positionY]);
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(this.positionX, this.positionY, this.radius, 0, 2 * Math.PI);
-        ctx.fillStyle = this.colorFill;
-        ctx.globalAlpha = this.opacityFill;
-        ctx.fill();
-        ctx.globalAlpha = this.opacityOutline;
-        ctx.strokeStyle = this.colorOutline;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.font = "bold 15px monospace";
-        ctx.fillStyle = "#b00";
+        draw_circle(ctx, {
+            radius: this.radius,
+            centroid: [this.positionX, this.positionY],
+            colorFill: this.colorFill,
+            colorOutline: this.colorOutline,
+            opacityFill: this.opacityFill,
+            opacityOutline: this.opacityOutline,
+        });
         if (this.name) {
-            ctx.fillText(this.name, this.positionX - 29, this.positionY - this.radius - 6);
+            draw_text(ctx, {
+                coordinate: [this.positionX, this.positionY - this.radius - 6],
+                text: this.name,
+                opacity: 0.6,
+            });
         }
         ctx.restore();
     }

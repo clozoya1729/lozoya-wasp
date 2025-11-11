@@ -1,24 +1,38 @@
-function draw_circle(ctx, radius, centroid, color = '#6d1b7b', linewidth = 1, alpha = 1, fill = false) {
+function draw_circle(ctx, parameters = {}) {
+    let {
+        radius = 1,
+        centroid = [0, 0],
+        colorFill = '#fff',
+        colorOutline = '#fff',
+        opacityFill = 0.1,
+        opacityOutline = 1,
+        linewidth = 1,
+    } = parameters;
     ctx.save();
-    ctx.globalAlpha = alpha;
     ctx.lineWidth = linewidth;
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color;
+    ctx.strokeStyle = colorOutline;
+    ctx.globalAlpha = opacityOutline;
     ctx.beginPath();
     ctx.arc(centroid[0], centroid[1], radius, 0, 2 * Math.PI);
-    if (fill) {
-        ctx.fill();
-    }
     ctx.stroke();
+    ctx.globalAlpha = opacityFill;
+    ctx.fillStyle = colorFill;
+    ctx.fill();
     ctx.restore();
 }
 
-function draw_curve(ctx, points, color = '#888', linewidth = 1, alpha = 1, dash = []) {
+function draw_curve(ctx, points, parameters = {}) {
+    let {
+        color = '#888',
+        linewidth = 1,
+        opacity = 1,
+        dash = [],
+    } = parameters;
     if (!points || points.length === 0) return;
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = linewidth;
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = opacity;
     if (dash && dash.length) ctx.setLineDash(dash);
     ctx.beginPath();
     ctx.moveTo(points[0][0], points[0][1]);
@@ -30,19 +44,29 @@ function draw_curve(ctx, points, color = '#888', linewidth = 1, alpha = 1, dash 
     ctx.restore();
 }
 
-function draw_line(ctx, start, end, color = '#888', linewidth = 1, alpha = 1) {
+function draw_line(ctx, parameters = {}) {
+    let {
+        start = [0, 0],
+        end = [1, 1],
+        color = '#888',
+        linewidth = 1,
+        opacity = 1,
+        dash = [],
+    } = parameters;
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = linewidth;
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = opacity;
     ctx.beginPath();
     ctx.moveTo(start[0], start[1]);
     ctx.lineTo(end[0], end[1]);
+    ctx.setLineDash(dash);
     ctx.stroke();
+    ctx.setLineDash([]);
     ctx.restore();
 }
 
-function draw_rectangle(ctx, parameters) {
+function draw_rectangle(ctx, parameters = {}) {
     let {
         coordinate = [0, 0],
         width = 20,
@@ -68,34 +92,49 @@ function draw_rectangle(ctx, parameters) {
     ctx.restore();
 }
 
-function draw_square(ctx, parameters) {
+function draw_square(ctx, parameters = {}) {
     let {size = 12, ...rest} = parameters;
     draw_rectangle(ctx, {width: size, height: size, ...rest});
 }
 
-function draw_tangent(ctx, start, theta, color = '#888', linewidth = 1, alpha = 1) {
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = linewidth;
-    ctx.globalAlpha = alpha;
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(start.x + 44 * Math.cos(theta), start.y + 44 * Math.sin(theta));
-    ctx.setLineDash([6, 4]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
+function draw_tangent(ctx, parameters = {}) {
+    let {
+        start = [0, 0],
+        length = 100,
+        angle = 0,
+        color = '#888',
+        linewidth = 1,
+        opacity = 1,
+        dash = [],
+    } = parameters;
+    let end = [start[0] + length * Math.cos(angle), start[1] + length * Math.sin(angle)];
+    draw_line(ctx, {
+        start: start,
+        end: end,
+        color: color,
+        linewidth: linewidth,
+        opacity: opacity,
+        dash: dash,
+    })
 }
 
-function draw_text(ctx, coordinate, text, font, color) {
+function draw_text(ctx, parameters = {}) {
+    let {
+        coordinate = [0, 0],
+        text = 'TEXT',
+        font = '10pt Arial',
+        color = '#fff',
+        opacity = 1,
+    } = parameters;
     ctx.save();
+    ctx.globalAlpha = opacity;
     ctx.font = font;
     ctx.fillStyle = color;
     ctx.fillText(text, coordinate[0], coordinate[1]);
     ctx.restore();
 }
 
-function draw_triangle(ctx, parameters) {
+function draw_triangle(ctx, parameters = {}) {
     let {
         coordinate = [0, 0],
         orientation = 0,

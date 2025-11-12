@@ -199,7 +199,7 @@ window.stop_reset = function () {
 };
 window.step_once = function () {
     if (animationActive) return;
-    const dt = 1 / 60; // one iteration step
+    const dt = speedInput.value / 60; // one iteration step
     run_frame(dt);
 };
 const speedInput = document.getElementById('speed');
@@ -207,7 +207,7 @@ simulationSpeed = parseFloat(speedInput.value);
 speedInput.addEventListener('input', () => {
     let v = parseFloat(speedInput.value);
     if (!Number.isFinite(v)) v = 1.0;
-    v = Math.max(0.1, Math.min(2.0, v));
+    v = Math.max(0.1, Math.min(4.0, v));
     simulationSpeed = parseFloat(v.toFixed(1));
     speedInput.value = simulationSpeed.toFixed(1);
 });

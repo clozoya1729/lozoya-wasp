@@ -72,10 +72,15 @@ label {
     border: 1px solid #788;
 }
 
+#speed:hover {
+    background-color: #000;
+    border: 1px solid #fff;
+}
+
 #speed-group input:focus {
     outline: none;
     box-shadow: none;
-    background-color: #222;
+    background-color: #000;
 }
 
 #group-playback {
@@ -92,7 +97,13 @@ label {
 }
 
 .label {
-    font-size: .6rem
+    color: white;
+    font-size: .6rem;
+}
+
+.btn:hover {
+    background: #000;
+    border: 1px solid #fff;
 }
 
 #btn-theme {

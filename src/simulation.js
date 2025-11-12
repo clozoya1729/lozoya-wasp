@@ -31,7 +31,7 @@ const lblPlay = document.getElementById('lbl-play');
 const lblTheme = document.getElementById('lbl-theme');
 window.theme_onclick = function () {
     const themeDiv = document.getElementById('theme');
-    const icon = document.querySelector('#theme-button i');
+    const icon = document.querySelector('#btn-theme i');
     const goingDark = !themeDiv.classList.contains('dark');
     themeDiv.classList.toggle('dark', goingDark);
     themeDiv.classList.toggle('light', !goingDark);

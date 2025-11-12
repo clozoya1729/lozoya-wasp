@@ -95,6 +95,14 @@ label {
     font-size: .6rem
 }
 
+#btn-theme {
+    width: 42px;
+}
+
+#btn-play {
+    width: 42px;
+}
+
 #btn-play i {
     color: #198754 !important
 }

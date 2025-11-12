@@ -1,3 +1,5 @@
+import {draw_circle, draw_line} from "./canvas.js";
+
 class Lidar {
     constructor(parameters = {}) {
         let {
@@ -147,6 +149,90 @@ class Lidar {
     }
 }
 
+/*
+TODO: move into Lidar class
+ */
+function cast_lidar_circles(position, orientation, collisionCircles, opts = {}) {
+    // raycast lidar against circles
+    const num = opts.numLidar ?? NUM_LIDAR
+    const fov = opts.lidarFov ?? LIDAR_FOV
+    const range = opts.lidarRange ?? LIDAR_RANGE
+    const steps = Math.max(1, num - 1)
+    const hits = []
+    const angles = []
+    for (let i = 0; i < num; ++i) {
+        const denom = num > 1 ? (num - 1) : 1;
+        const offset = num > 1 ? (i / denom - 0.5) * fov : 0;
+        const angle = orientation + offset
+        let best = null
+        for (let j = 0; j < collisionCircles.length; ++j) {
+            const c = collisionCircles[j]
+            const h = ray_intersect_circle(position.x, position.y, angle, c.cx, c.cy, c.r, range)
+            if (!h) continue
+            if (!best || h.dist < best.dist) best = {...h, circleIndex: j, meta: c.meta}
+        }
+        if (best) hits.push({...best, angle})
+        angles.push(angle)
+    }
+    return {hits, angles}
+}
+
+function ray_intersect_circle(x0, y0, theta, cx, cy, r, maxRange) {
+    const dx = Math.cos(theta)
+    const dy = Math.sin(theta)
+    const ox = x0 - cx
+    const oy = y0 - cy
+    const A = dx * dx + dy * dy
+    const B = 2 * (ox * dx + oy * dy)
+    const C = ox * ox + oy * oy - r * r
+    const D = B * B - 4 * A * C
+    if (D < 0) return null
+    const sqrtD = Math.sqrt(D)
+    const t1 = (-B - sqrtD) / (2 * A)
+    const t2 = (-B + sqrtD) / (2 * A)
+    const eps = 1e-6;
+    const t = (t1 > eps && t1 < maxRange) ? t1 : (t2 > eps && t2 < maxRange) ? t2 : null;
+    if (t == null) return null
+    return {x: x0 + t * dx, y: y0 + t * dy, dist: t}
+}
+
+function draw_lidar(ctx, position, orientation, circles, parameters= {}) {
+    let {
+        numRays = 9,
+        fov = Math.PI / 2,
+        range = 60,
+    } = parameters;
+    const cast = cast_lidar_circles(position, orientation, circles, {
+        numLidar: numRays,
+        lidarFov: fov,
+        lidarRange: range,
+    })
+    for (let i = 0; i < cast.angles.length; ++i) {
+        const angle = cast.angles[i]
+        const h = cast.hits.find(k => Math.abs(k.angle - angle) < 1e-6)
+        const len = h ? h.dist : range
+        const x1 = position.x + len * Math.cos(angle)
+        const y1 = position.y + len * Math.sin(angle)
+        draw_line(ctx, {
+            start: [position.x, position.y],
+            end: [x1, y1],
+            color: '#4dd0e1',
+            opacity: 0.6,
+        })
+    }
+    for (const h of cast.hits) draw_circle(ctx, {
+        radius: 3,
+        centroid: [h.x, h.y],
+        colorOutline: '#a00',
+        colorFill: '#f00',
+        opacityFill: 1
+    })
+}
+
+// end TODO
+
 export {
     Lidar,
+    cast_lidar_circles,
+    draw_lidar,
 }

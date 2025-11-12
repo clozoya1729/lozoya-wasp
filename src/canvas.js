@@ -126,7 +126,7 @@ function draw_text(ctx, parameters = {}) {
         coordinate = [0, 0],
         text = 'TEXT',
         font = '10pt Arial',
-        color = '#fff',
+        color = '#888',
         opacity = 1,
     } = parameters;
     ctx.save();
@@ -165,6 +165,50 @@ function draw_triangle(ctx, parameters = {}) {
     ctx.restore();
 }
 
+function svg_instantiate(templateId, parameters = {}) {
+    let {
+        size = 100,
+        anchor = 'origin',  // 'center' or 'origin
+        zIndex = 10,
+    } = parameters;
+    const template = document.getElementById(templateId);
+    const clone = template.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.style.position = 'absolute';
+    clone.style.left = '0px';
+    clone.style.top = '0px';
+    clone.style.width = size + 'px';
+    clone.style.height = size + 'px';
+    clone.style.pointerEvents = 'none';
+    clone.style.transformBox = 'fill-box';
+    clone.style.zIndex = String(zIndex);
+    clone.dataset.anchor = anchor;
+    clone.style.transformOrigin = clone.dataset.anchor === 'origin' ? '0 0' : '50% 50%';
+    document.body.appendChild(clone);
+    return clone;
+}
+
+function svg_sync(svg, position, orientation, parameters = {}) {
+    let {
+        size = 100,
+    } = parameters;
+    const rect = canvas.getBoundingClientRect();
+    const sx = rect.width / canvas.width;
+    const sy = rect.height / canvas.height;
+    if (size != null) {
+        svg.style.width = size + 'px';
+        svg.style.height = size + 'px';
+    }
+    const w = parseFloat(svg.style.width) || size;
+    const h = parseFloat(svg.style.height) || w;
+    const anchor = svg.dataset.anchor || 'center';
+    const left = rect.left + window.scrollX + position.x * sx - (anchor === 'center' ? w / 2 : 0);
+    const top = rect.top + window.scrollY + position.y * sy - (anchor === 'center' ? h / 2 : 0);
+    svg.style.left = left + 'px';
+    svg.style.top = top + 'px';
+    if (orientation != null) svg.style.transform = 'rotate(' + (orientation * 180 / Math.PI) + 'deg)';
+}
+
 export {
     draw_circle,
     draw_curve,
@@ -174,4 +218,6 @@ export {
     draw_tangent,
     draw_text,
     draw_triangle,
+    svg_instantiate,
+    svg_sync,
 };

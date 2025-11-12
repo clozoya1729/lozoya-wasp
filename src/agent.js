@@ -1,3 +1,6 @@
+/*
+TODO: move wasp code to planners/wasp.js
+ */
 import {draw_circle, draw_rectangle, draw_tangent, draw_text} from './canvas.js';
 import {evaluate_quintic_2d, fit_quintic, quintic_tangent, tangent_vector} from './math.js';
 
@@ -19,12 +22,12 @@ class Agent {
         let avoidResetDelay = parameters.avoidResetDelay ?? 200;
         let p2SnapLookaheadSec = parameters.p2SnapLookaheadSec ?? 0.20;
         let p2SnapDistance = parameters.p2SnapDistance ?? 6;
-        let collisionRadius = parameters.collisionCircle ?? 60;
+        let collisionRadius = parameters.collisionCircle ?? 30;
         let collisionMargin = parameters.collisionMargin ?? 0;
         let colorTrail = parameters.colorTrail ?? '#000';
         let colorBodyFill = parameters.colorBodyFill ?? '#fff';
         let colorBodyOutline = parameters.colorBodyOutline ?? '#888';
-
+        let colorText = parameters.colorText ?? '#888';
         this.name = name;
         this.p1 = {x: positionX, y: positionY};
         this.p2 = {x: targetX, y: targetY};
@@ -49,6 +52,7 @@ class Agent {
         this.collisionMargin = collisionMargin;
         this.colorBodyFill = colorBodyFill;
         this.colorBodyOutline = colorBodyOutline;
+        this.colorText = colorText;
         this.avoidActive = false;
         this.avoidRestore = false;
         this.avoidClearTime = null;
@@ -130,7 +134,7 @@ class Agent {
         else if (rightCount > leftCount) side = -1;
         return {
             x: this.p1.x + fwd.x * this.avoidDistance + side * left.x * this.sideDistance,
-            y: this.p1.y + fwd.y * this.avoidDistance + side * left.y * this.sideDistance
+            y: this.p1.y + fwd.y * this.avoidDistance + side * left.y * this.sideDistance,
         };
     }
 
@@ -140,7 +144,7 @@ class Agent {
         return castFn(this.p1, this.orientation, circles, {
             numLidar: this.numLidar,
             lidarFov: this.lidarFov,
-            lidarRange: this.lidarRange
+            lidarRange: this.lidarRange,
         });
     }
 
@@ -229,14 +233,14 @@ class Agent {
             centroid: [this.p1.x, this.p1.y],
             colorOutline: '#0ff',
             opacityFill: 0,
-            opacityOutline: 0.2
+            opacityOutline: 0.2,
         });
         draw_rectangle(ctx, {
             coordinate: [this.p1.x, this.p1.y],
             orientation: this.orientation,
             colorFill: this.colorBodyFill,
             colorOutline: this.colorBodyOutline,
-            opacityFill: 0.5
+            opacityFill: 0.5,
         });
         draw_circle(ctx, {
             radius: this.collisionRadius,
@@ -247,28 +251,63 @@ class Agent {
             opacityOutline: 0.3,
             dash: [8, 8],
         });
-        draw_text(ctx, {coordinate: [this.p1.x - 20, this.p1.y - 20], text: this.name});
     }
 
     draw_waypoints(ctx, colors = {p1: '#0ff', p2: '#4a5', p3: '#258'}) {
-        draw_circle(ctx, {radius: 0, centroid: [this.p1.x, this.p1.y], colorOutline: colors.p1, opacityFill: 0});
+        draw_circle(ctx, {
+            radius: 0,
+            centroid: [this.p1.x, this.p1.y],
+            colorOutline: colors.p1,
+            opacityFill: 0,
+        });
         draw_tangent(ctx, {
             start: [this.p1.x, this.p1.y],
             length: 44,
             angle: this.orientation,
             color: colors.p1,
-            dash: [6, 4]
+            dash: [6, 4],
         });
-        draw_circle(ctx, {radius: 8, centroid: [this.p2.x, this.p2.y], colorOutline: colors.p2, opacityFill: 0});
+        draw_text(ctx, {
+            coordinate: [this.p1.x - 10, this.p1.y - 30],
+            text: this.name,
+            color: this.colorText,
+        });
+        draw_circle(ctx, {
+            radius: 8,
+            centroid: [this.p2.x, this.p2.y],
+            colorOutline: colors.p2,
+            opacityFill: 0,
+        });
         let thetaP2 = this._p2_is_p3() ? this.targetTangent : Math.atan2(this.p3.y - this.p2.y, this.p3.x - this.p2.x);
-        draw_tangent(ctx, {start: [this.p2.x, this.p2.y], length: 44, angle: thetaP2, color: colors.p2, dash: [6, 4]});
-        draw_circle(ctx, {radius: 4, centroid: [this.p3.x, this.p3.y], colorOutline: colors.p3, opacityFill: 0});
+        draw_tangent(ctx, {
+            start: [this.p2.x, this.p2.y],
+            length: 44,
+            angle: thetaP2,
+            color: colors.p2,
+            dash: [6, 4],
+        });
+        draw_text(ctx, {
+            coordinate: [this.p2.x - 10, this.p2.y + 20],
+            text: `${this.name} Waypoint`,
+            color: this.colorText,
+        });
+        draw_circle(ctx, {
+            radius: 4,
+            centroid: [this.p3.x, this.p3.y],
+            colorOutline: colors.p3,
+            opacityFill: 0,
+        });
         draw_tangent(ctx, {
             start: [this.p3.x, this.p3.y],
             length: 44,
             angle: this.targetTangent,
             color: colors.p3,
             dash: [6, 4]
+        });
+        draw_text(ctx, {
+            coordinate: [this.p3.x - 10, this.p3.y - 15],
+            text: `${this.name} Target`,
+            color: this.colorText,
         });
     }
 }

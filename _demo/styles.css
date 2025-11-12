@@ -5,25 +5,135 @@ body {
     font-size: 8pt;
 }
 
+#ui {
+    margin-bottom: 10px;
+}
+
+label {
+    margin-right: 18px;
+}
+
+#form-parameters label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+#btn-play i {
+    color: #198754 !important;
+}
+
+#btn-play.is-playing i {
+    color: #ffc107 !important;
+}
+
+#btn-play:hover i, #btn-play:focus i, #btn-play:active i {
+    color: #198754 !important;
+}
+
+#btn-play.is-playing:hover i, #btn-play.is-playing:focus i, #btn-play.is-playing:active i {
+    color: #ffc107 !important;
+}
+
+#btn-stop i {
+    color: #dc3545 !important;
+}
+
+#btn-stop:hover i, #btn-stop:focus i, #btn-stop:active i {
+    color: #dc3545 !important;
+}
+
+#btn-step i {
+    color: #ffffff !important;
+}
+
+#btn-step.is-disabled i {
+    color: #6c757d !important;
+    opacity: 0.7;
+}
+
+#speed-group {
+    background-color: #222;
+    border-radius: 4px;
+}
+
+#speed-group .input-group-text i {
+    color: #fff;
+}
+
+#speed-group .input-group-text {
+    background-color: transparent;
+    border: 1px solid #788;
+    padding: 0 4px;
+}
+
+#speed-group input {
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #788;
+}
+
+#speed-group input:focus {
+    outline: none;
+    box-shadow: none;
+    background-color: #222;
+}
+
+#group-playback {
+    border: 1px solid #788;
+    border-radius: 4px;
+}
+
+.btn-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    gap: 1px
+}
+
+.label {
+    font-size: .6rem
+}
+
+#btn-play i {
+    color: #198754 !important
+}
+
+#btn-play.is-playing i {
+    color: #ffc107 !important
+}
+
+#btn-play:hover i, #btn-play:focus i, #btn-play:active i {
+    color: #198754 !important
+}
+
+#btn-play.is-playing:hover i, #btn-play.is-playing:focus i, #btn-play.is-playing:active i {
+    color: #ffc107 !important
+}
+
+#btn-stop i {
+    color: #dc3545 !important
+}
+
+#btn-stop:hover i, #btn-stop:focus i, #btn-stop:active i {
+    color: #dc3545 !important
+}
+
+#btn-step i {
+    color: #fff !important
+}
+
+#btn-step.is-disabled i {
+    color: #6c757d !important;
+    opacity: .7
+}
+
 .dark {
     canvas {
         background: #000;
         border-radius: 8px;
         display: block;
         margin: 16px 0;
-    }
-
-    #ui {
-        margin-bottom: 10px;
-    }
-
-    label {
-        margin-right: 18px;
-    }
-
-    #form-parameters label {
-        display: block;
-        margin-bottom: 6px;
     }
 }
 
@@ -33,18 +143,5 @@ body {
         border-radius: 8px;
         display: block;
         margin: 16px 0;
-    }
-
-    #ui {
-        margin-bottom: 10px;
-    }
-
-    label {
-        margin-right: 18px;
-    }
-
-    #form-parameters label {
-        display: block;
-        margin-bottom: 6px;
     }
 }

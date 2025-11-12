@@ -51,7 +51,7 @@ class Obstacle {
             draw_text(ctx, {
                 coordinate: [this.positionX, this.positionY - this.radius - 6],
                 text: this.name,
-                opacity: 0.6,
+                opacity: 1,
             });
         }
         ctx.restore();

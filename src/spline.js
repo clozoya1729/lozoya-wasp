@@ -1,5 +1,0 @@
-class Spline {
-    constructor(parameters) {
-
-    }
-}

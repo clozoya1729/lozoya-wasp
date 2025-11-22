@@ -44,41 +44,57 @@
 </svg>
 <div id="theme"
      class="light">
-    <nav class="navbar navbar-dark bg-dark navbar-expand px-3 py-1 small" style="padding: 0 4rem;">
+    <nav class="navbar navbar-dark bg-dark navbar-expand px-3 py-1 small"
+         style="padding: 0 4rem;">
         <div class="container-fluid px-3">
             <div class="d-flex align-items-center gap-2">
-                <a class="navbar-brand fw-semibold fs-6 py-0 m-0 me-2"
+                <a class="navbar-brand fw-semibold py-0 m-0 me-2"
                    href="https://github.com/clozoya1729/lozoya-wasp"
-                   target="_blank" rel="noopener noreferrer">
+                   target="_blank"
+                   rel="noopener noreferrer">
                     Lozoya&nbsp;|&nbsp;WASP Demo
                 </a>
                 <div class="d-flex align-items-center gap-2">
                     <!-- Playback group -->
-                    <div id="group-playback" class="d-flex">
-                        <div id="speed-group" class="input-group input-group-sm align-items-center"
+                    <div id="group-playback"
+                         class="d-flex">
+                        <div id="speed-group"
+                             class="input-group input-group-sm align-items-center"
                              style="width: 90px;">
                           <span class="input-group-text py-0 px-1 d-flex flex-column align-items-center bg-dark text-white border-secondary">
                             <i class="bi bi-speedometer2"></i>
                             <small class="label">Speed</small>
                           </span>
-                            <input id="speed" type="number" value="1.0" min="0.1" max="4.0" step="0.1"
-                                   class="form-control form-control-sm text-end py-0 px-1 bg-dark text-white border-secondary">
+                            <input id="speed"
+                                   class="form-control form-control-sm text-end py-0 px-1 bg-dark text-white border-secondary"
+                                   type="number"
+                                   value="1.0"
+                                   min="0.1"
+                                   max="4.0"
+                                   step="0.1">
                         </div>
-                        <button id="btn-play" type="button" class="btn btn-outline-secondary btn-sm"
+                        <button id="btn-play"
+                                type="button"
+                                class="btn btn-outline-secondary btn-sm"
                                 onclick="play_pause()">
                             <span class="btn-stack">
                               <i class="bi bi-play"></i>
-                              <small id="lbl-play" class="label">Play</small>
+                              <small id="lbl-play"
+                                     class="label">Play</small>
                             </span>
                         </button>
-                        <button id="btn-step" type="button" class="btn btn-outline-secondary btn-sm"
+                        <button id="btn-step"
+                                type="button"
+                                class="btn btn-outline-secondary btn-sm"
                                 onclick="step_once()">
                             <span class="btn-stack">
                               <i class="bi bi-skip-forward"></i>
                               <small class="label">Step</small>
                             </span>
                         </button>
-                        <button id="btn-stop" type="button" class="btn btn-outline-secondary btn-sm"
+                        <button id="btn-stop"
+                                type="button"
+                                class="btn btn-outline-secondary btn-sm"
                                 onclick="stop_reset()">
                             <span class="btn-stack">
                               <i class="bi bi-stop"></i>
@@ -87,11 +103,14 @@
                         </button>
                     </div>
                     <!-- Theme toggle -->
-                    <button id="btn-theme" type="button" class="btn btn-outline-secondary btn-sm"
+                    <button id="btn-theme"
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm"
                             onclick="theme_onclick()">
                           <span class="btn-stack">
                             <i class="bi bi-moon"></i>
-                            <small id="lbl-theme" class="label">Light</small>
+                            <small id="lbl-theme"
+                                   class="label">Light</small>
                           </span>
                     </button>
                 </div>
@@ -99,20 +118,27 @@
         </div>
     </nav>
     <div style="display: flex">
-        <div id="plots" style="display:flex;display:none; flex-direction: column; gap: 0px;">
+        <div id="plots"
+             style="display:flex; display:none; flex-direction: column; gap: 0px;">
             <div style="display:flex; gap:0px;">
-                <div id="plot-velocity" style="width: 400px; height: 400px;"></div>
-                <div id="plot-acceleration" style="width: 400px; height: 400px;"></div>
-                <div id="plot-jerk" style="width: 400px; height: 400px;"></div>
+                <div id="plot-velocity"
+                     class="plot"></div>
+                <div id="plot-acceleration"
+                     class="plot"></div>
+                <div id="plot-jerk"
+                     class="plot"></div>
             </div>
             <div style="display:flex; gap:0px;">
-                <div id="plot-angular-velocity" style="width: 400px; height: 200px;"></div>
-                <div id="plot-angular-acceleration" style="width: 400px; height: 200px;"></div>
-                <div id="plot-angular-jerk" style="width: 400px; height: 200px;"></div>
+                <div id="plot-angular-velocity"
+                     style="width: 400px; height: 200px;"></div>
+                <div id="plot-angular-acceleration"
+                     class="plot"></div>
+                <div id="plot-angular-jerk"
+                     class="plot"></div>
             </div>
         </div>
-        <canvas id="canvas" width="800" height="420"></canvas>
     </div>
+    <canvas id="canvas" width="800" height="420"></canvas>
 </div>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

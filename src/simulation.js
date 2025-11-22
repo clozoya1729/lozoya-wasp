@@ -1,32 +1,23 @@
 import {Agent} from "./agent.js";
-import {draw_curve, svg_instantiate, svg_sync} from "./canvas.js";
-import {evaluate_quintic_2d} from './math.js';
+import {collision_get, collision_reset, draw_truss} from "./canvas.js";
 import {Obstacle} from "./obstacle.js";
-import {cast_lidar_circles, draw_lidar, Lidar} from "./sensor.js";
+import {CONFIGURATION} from './configuration.js';
 
+// parameters
+let agents = [];
+let obstacles = [];
+let lastTimestamp = null;
+let animationActive = false;
+let simulationSpeed = 1;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+// controls
+const btnPlay = document.getElementById('btn-play');
+const btnStep = document.getElementById('btn-step');
+const btnStop = document.getElementById('btn-stop');
 // theme
-let themeDark = {
-    colorTrail: '#fff',
-    colorSpline: '#ffd600',
-    colorBodyOutline: '#fff',
-    colorBodyFill: '#888',
-    colorP1: '#0ff',
-    colorP2: '#43a047',
-    colorP3: '#1976d2',
-    colorLidarNoHit: '#4dd0e1'
-};
-let themeLight = {
-    colorTrail: '#000',
-    colorSpline: '#888',
-    colorBodyOutline: '#000',
-    colorBodyFill: '#888',
-    colorP1: '#0ff',
-    colorP2: '#43a047',
-    colorP3: '#1976d2',
-    colorLidarNoHit: '#08f'
-};
 const themeDiv = document.getElementById('theme');
-let theme = themeDiv.classList.contains('dark') ? themeDark : themeLight;
+let theme = themeDiv.classList.contains('dark') ? CONFIGURATION.theme.dark : CONFIGURATION.theme.light;
 const lblPlay = document.getElementById('lbl-play');
 const lblTheme = document.getElementById('lbl-theme');
 window.theme_onclick = function () {
@@ -38,13 +29,48 @@ window.theme_onclick = function () {
     icon.className = goingDark ? 'bi bi-sun' : 'bi bi-moon';
     if (lblTheme) lblTheme.textContent = goingDark ? 'Light' : 'Dark';
     for (const agent of agents || []) {
-        agent.colorTrail = goingDark ? themeDark.colorTrail : themeLight.colorTrail;
+        agent.colorTrail = goingDark ? CONFIGURATION.theme.dark.colorTrail : CONFIGURATION.theme.light.colorTrail;
+        agent.colorPath = goingDark ? CONFIGURATION.theme.dark.colorPath : CONFIGURATION.theme.light.colorPath;
     }
-    draw();
-    controls_update();
+    simulation_draw();
+    simulation_controls_update();
 };
+window.play_pause = function () {
+    animationActive = !animationActive;
+    if (animationActive) {
+        lastTimestamp = null;
+        requestAnimationFrame(simulation_animate);
+    }
+    simulation_controls_update();
+};
+window.stop_reset = function () {
+    animationActive = false;
+    lastTimestamp = null;
+    simulation_reinstantiate_from_configs();
+    simulation_draw();
+    simulation_controls_update();
+};
+window.step_once = function () {
+    if (animationActive) return;
+    const dt = speedInput.value / 60; // one iteration step
+    run_frame(dt);
+};
+const speedInput = document.getElementById('speed');
+simulationSpeed = parseFloat(speedInput.value);
+speedInput.addEventListener('input', () => {
+    let v = parseFloat(speedInput.value);
+    if (!Number.isFinite(v)) v = 1.0;
+    v = Math.max(0.1, Math.min(4.0, v));
+    simulationSpeed = parseFloat(v.toFixed(1));
+    speedInput.value = simulationSpeed.toFixed(1);
+});
 
-function controls_update() {
+function get_collision_geometry(excludeAgentName) {
+    const shapes = collision_get();
+    return shapes.filter(s => !(s.meta && s.meta.kind === 'agent' && s.meta.name === excludeAgentName));
+}
+
+function simulation_controls_update() {
     const icon = btnPlay.querySelector('i');
     if (animationActive) {
         icon.className = 'bi bi-pause';
@@ -66,211 +92,79 @@ function controls_update() {
     if (lblTheme) lblTheme.textContent = dark ? 'Light' : 'Dark';
 })();
 
-// parameters
-let agents;
-let obstacles;
-let lastTimestamp = null;
-let animationActive = false;
-let simulationSpeed = 1;
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const AGENTS_CONFIG = [
-    {
-        name: 'Agent 0',
-        positionX: 100,
-        positionY: 350,
-        speed: 50,
-        targetX: 700,
-        targetY: 100,
-        lidar: new Lidar(),
-    },
-    {
-        name: 'Agent 1',
-        positionX: 750,
-        positionY: 300,
-        speed: 50,
-        targetX: 100,
-        targetY: 200,
-        lidar: new Lidar(),
-    },
-]
-const OBSTACLES_CONFIG = [
-    {
-        name: 'Static',
-        positionX: 320,
-        positionY: 150,
-        radius: 60,
-    },
-    // {
-    //     name: 'Dynamic',
-    //     positionX: canvas.width - 300,
-    //     positionY: 300,
-    //     velocityX: -20,
-    // },
-    // {
-    //     positionX: 800 + 30,
-    //     positionY: 300,
-    //     velocityX: -50,
-    // },
-    // {
-    //     positionX: 800 + 30,
-    //     positionY: 100,
-    //     velocityX: -10,
-    // },
-    // {
-    //     positionX: 800 + 100,
-    //     positionY: 250,
-    //     velocityX: -40,
-    // },
-    // {
-    //     positionX: 800 / 1.75,
-    //     positionY: 0,
-    //     velocityY: 25,
-    // },
-    // {
-    //     positionX: 800 / 1.5,
-    //     positionY: -200,
-    //     velocityY: 30,
-    // },
-    // {
-    //     positionX: 800 / 3,
-    //     positionY: 100,
-    //     velocityY: 20,
-    // }
-];
-// controls
-const btnPlay = document.getElementById('btn-play');
-const btnStep = document.getElementById('btn-step');
-const btnStop = document.getElementById('btn-stop');
-
-// simulation
 function run_frame(dt) {
-    for (const obs of obstacles) obs.step(dt);
-    for (const o of obstacles) svg_sync(o.svg, {x: o.positionX, y: o.positionY}, 0);
-    for (const agent of agents) {
-        agent.step(performance.now(), dt, get_collision_circles, cast_lidar_circles);
-        svg_sync(agent.svg, agent.p1, agent.orientation);
+    for (const obstacle of obstacles) {
+        obstacle.step(dt);
     }
-    draw();
+    for (const agent of agents) {
+        agent.step(performance.now(), dt, get_collision_geometry, agent.svgSize);
+    }
+    simulation_draw();
 }
 
-function reinstantiate_from_configs() {
+function simulation_reinstantiate_from_configs() {
     // remove existing svg clones
-    if (agents) for (const a of agents) {
-        if (a && a.svg && a.svg.remove) a.svg.remove();
-        a.svg = null;
+    if (agents) for (const agent of agents) {
+        agent.undraw(ctx);
     }
-    if (obstacles) for (const o of obstacles) {
-        if (o && o.svg && o.svg.remove) o.svg.remove();
-        o.svg = null;
+    if (obstacles) for (const obstacle of obstacles) {
+        obstacle.undraw(ctx);
     }
-    agents = AGENTS_CONFIG.map(cfg => new Agent({
-        ...cfg,
-        lidar: new Lidar(),
-        colorTrail: theme.colorTrail,
-        colorBodyFill: theme.colorBodyFill,
-        colorBodyOutline: theme.colorBodyOutline,
-    }));
-    for (const agent of agents) {
-        agent.svg = svg_instantiate('agent-template', {size: 100});
-        svg_sync(agent.svg, agent.p1, agent.orientation);
+    if (CONFIGURATION.agents) {
+        agents = CONFIGURATION.agents.map(cfg => new Agent({
+            ...cfg,
+            canvas: canvas,
+            colorPath: theme.colorPath,
+            colorTrail: theme.colorTrail,
+            colorBodyFill: theme.colorBodyFill,
+            colorBodyOutline: theme.colorBodyOutline,
+        }));
     }
-    obstacles = OBSTACLES_CONFIG.map(cfg => new Obstacle(cfg));
-    for (const o of obstacles) {
-        o.svg = svg_instantiate('agent-template', {size: 3 * o.radius});
-        svg_sync(o.svg, {x: o.positionX, y: o.positionY}, 0);
+    if (CONFIGURATION.obstacles) {
+        obstacles = CONFIGURATION.obstacles.map(cfg => new Obstacle({
+            ...cfg,
+            canvas: canvas,
+        }));
     }
 }
 
-window.play_pause = function () {
-    animationActive = !animationActive;
-    if (animationActive) {
-        lastTimestamp = null;
-        requestAnimationFrame(animate);
+function simulation_animate(ts) {
+    if (!animationActive) {
+        return;
     }
-    controls_update();
-};
-window.stop_reset = function () {
-    animationActive = false;
-    lastTimestamp = null;
-    reinstantiate_from_configs();
-    draw();
-    controls_update();
-};
-window.step_once = function () {
-    if (animationActive) return;
-    const dt = speedInput.value / 60; // one iteration step
-    run_frame(dt);
-};
-const speedInput = document.getElementById('speed');
-simulationSpeed = parseFloat(speedInput.value);
-speedInput.addEventListener('input', () => {
-    let v = parseFloat(speedInput.value);
-    if (!Number.isFinite(v)) v = 1.0;
-    v = Math.max(0.1, Math.min(4.0, v));
-    simulationSpeed = parseFloat(v.toFixed(1));
-    speedInput.value = simulationSpeed.toFixed(1);
-});
-
-function get_collision_circles() {
-    // builds one list of circles from obstacles + agents
-    const list = []
-    for (const o of obstacles) list.push({
-        cx: o.positionX,
-        cy: o.positionY,
-        r: o.radius,
-        meta: {type: 'obstacle', name: o.name}
-    })
-    for (const a of agents) if (a.collisionRadius > 0) list.push({
-        cx: a.p1.x,
-        cy: a.p1.y,
-        r: a.collisionRadius,
-        meta: {type: 'agent', name: a.name}
-    })
-    return list
-}
-
-function animate(ts) {
-    if (!animationActive) return;
-    if (!lastTimestamp) lastTimestamp = ts;
+    if (!lastTimestamp) {
+        lastTimestamp = ts;
+    }
     const dt = Math.min((ts - lastTimestamp) / 1000, 0.06) * simulationSpeed;
     lastTimestamp = ts;
     run_frame(dt);
-    if (animationActive) requestAnimationFrame(animate);
+    if (animationActive) {
+        requestAnimationFrame(simulation_animate);
+    }
 }
 
-function draw() {
+function simulation_draw() {
+    collision_reset();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const obstacle of obstacles) obstacle.draw(ctx);
+    for (const agent of agents) agent.draw(ctx);
+    // draw_truss(ctx, {...CONFIGURATION.environment, collision: true});
+    const shapes = collision_get();
     for (const agent of agents) {
-        agent.draw(ctx);
-        agent.draw_waypoints(ctx);
-        // lidar
-        const circles = get_collision_circles().filter(c => !(c.meta && c.meta.type === 'agent' && c.meta.name === agent.name));
-        draw_lidar(ctx, agent.p1, agent.orientation, circles, {
-            numRays: agent.numLidar,
-            fov: agent.lidarFov,
-            range: agent.lidarRange,
-        });
-        // trajectory
-        const curvePoints = [];
-        for (let t = 0; t <= 1.001; t += 0.01) {
-            const pt = evaluate_quintic_2d(agent.currentSpline, t);
-            curvePoints.push([pt.x, pt.y]);
-        }
-        draw_curve(ctx, curvePoints, {
-            color: theme.colorSpline,
-            dash: [2, 8],
+        const collisionGeometry = shapes.filter(s => !(s.meta && s.meta.kind === 'agent' && s.meta.name === agent.name));
+        agent.lidar.draw(ctx, agent.p1, agent.orientation, collisionGeometry, {
+            numRays: agent.lidar.numRays,
+            fov: agent.lidar.fov,
+            range: agent.lidar.range,
         });
     }
 }
 
+
 window.onload = () => {
-    animationActive = false;
-    lastTimestamp = null;
-    reinstantiate_from_configs();
-    draw();
-    controls_update();
-    requestAnimationFrame(animate);
+    simulation_reinstantiate_from_configs();
+    simulation_draw();
+    simulation_controls_update();
+    requestAnimationFrame(simulation_animate);
 };
 

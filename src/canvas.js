@@ -1,3 +1,5 @@
+let COLLISION_SHAPES = [];
+
 function draw_circle(ctx, parameters = {}) {
     let {
         radius = 1,
@@ -8,6 +10,8 @@ function draw_circle(ctx, parameters = {}) {
         opacityOutline = 1,
         linewidth = 1,
         dash = [],
+        collision = false,
+        meta = null,
     } = parameters;
     ctx.save();
     ctx.lineWidth = linewidth;
@@ -22,6 +26,9 @@ function draw_circle(ctx, parameters = {}) {
     ctx.fill();
     ctx.setLineDash([]);
     ctx.restore();
+    if (collision) {
+        collision_register({type: 'circle', cx: centroid[0], cy: centroid[1], r: radius, meta});
+    }
 }
 
 function draw_curve(ctx, points, parameters = {}) {
@@ -79,6 +86,8 @@ function draw_rectangle(ctx, parameters = {}) {
         colorOutline = '#fff',
         opacityFill = 0.1,
         opacityOutline = 1,
+        collision = false,
+        meta = null,
     } = parameters;
     ctx.save();
     ctx.translate(coordinate[0], coordinate[1]);
@@ -93,6 +102,18 @@ function draw_rectangle(ctx, parameters = {}) {
     ctx.globalAlpha = opacityOutline;
     ctx.stroke();
     ctx.restore();
+    if (collision) {
+        collision_register({
+            type: 'rect',
+            cx: coordinate[0],
+            cy: coordinate[1],
+            w: width,
+            h: height,
+            angle: orientation,
+            meta
+        });
+    }
+
 }
 
 function draw_square(ctx, parameters = {}) {
@@ -145,6 +166,8 @@ function draw_triangle(ctx, parameters = {}) {
         colorOutline = '#fff',
         opacityFill = 0.1,
         opacityOutline = 1,
+        collision = false,
+        meta = null,
     } = parameters;
     ctx.save();
     ctx.translate(coordinate[0], coordinate[1]);
@@ -162,6 +185,69 @@ function draw_triangle(ctx, parameters = {}) {
     ctx.globalAlpha = opacityOutline;
     ctx.stroke();
     ctx.rotate(-orientation);
+    ctx.restore();
+    if (collision) {
+        const cosA = Math.cos(orientation);
+        const sinA = Math.sin(orientation);
+        const ptsLocal = [
+            {x: -6, y: -6},
+            {x: 6, y: 0},
+            {x: -6, y: 6},
+        ];
+        const verts = ptsLocal.map(p => ({
+            x: coordinate[0] + p.x * cosA - p.y * sinA,
+            y: coordinate[1] + p.x * sinA + p.y * cosA,
+        }));
+        collision_register({type: 'poly', vertices: verts, meta});
+    }
+}
+
+function draw_truss(ctx, parameters = {}) {
+    let {
+        elements = null,
+        nodes = null,
+        coordinate = [0, 0],
+        orientation = 0,
+        thickness = 6,
+        colorOutline = '#000',
+        colorFill = '#888',
+        collision = false,
+        meta = null,
+    } = parameters;
+    ctx.save();
+    ctx.translate(coordinate[0], coordinate[1]);
+    ctx.rotate(orientation);
+    for (let k = 0; k < elements.length; k++) {
+        let i = elements[k][0];
+        let j = elements[k][1];
+        let x1 = nodes[i][0];
+        let y1 = nodes[i][1];
+        let x2 = nodes[j][0];
+        let y2 = nodes[j][1];
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let L = Math.sqrt(dx * dx + dy * dy);
+        let angleLocal = Math.atan2(dy, dx);
+        let cxLocal = (x1 + x2) / 2;
+        let cyLocal = (y1 + y2) / 2;
+        draw_rectangle(ctx, {
+            coordinate: [cxLocal, cyLocal],
+            width: L,
+            height: thickness,
+            orientation: angleLocal,
+            colorFill: colorFill,
+            colorOutline: colorOutline,
+            opacityFill: 1,
+        });
+        if (collision) {
+            const cosT = Math.cos(orientation);
+            const sinT = Math.sin(orientation);
+            const gx = coordinate[0] + cxLocal * cosT - cyLocal * sinT;
+            const gy = coordinate[1] + cxLocal * sinT + cyLocal * cosT;
+            const angleGlobal = orientation + angleLocal;
+            collision_register({type: 'rect', cx: gx, cy: gy, w: L, h: thickness, angle: angleGlobal, meta: meta ?? {kind: 'truss', elementIndex: k}});
+        }
+    }
     ctx.restore();
 }
 
@@ -188,10 +274,7 @@ function svg_instantiate(templateId, parameters = {}) {
     return clone;
 }
 
-function svg_sync(svg, position, orientation, parameters = {}) {
-    let {
-        size = 100,
-    } = parameters;
+function svg_sync(canvas, svg, position, orientation = 0, size = 100) {
     const rect = canvas.getBoundingClientRect();
     const sx = rect.width / canvas.width;
     const sy = rect.height / canvas.height;
@@ -209,7 +292,22 @@ function svg_sync(svg, position, orientation, parameters = {}) {
     if (orientation != null) svg.style.transform = 'rotate(' + (orientation * 180 / Math.PI) + 'deg)';
 }
 
+function collision_reset() {
+    COLLISION_SHAPES = [];
+}
+
+function collision_register(shape) {
+    COLLISION_SHAPES.push(shape);
+}
+
+function collision_get() {
+    return COLLISION_SHAPES;
+}
+
 export {
+    collision_register,
+    collision_reset,
+    collision_get,
     draw_circle,
     draw_curve,
     draw_line,
@@ -218,6 +316,7 @@ export {
     draw_tangent,
     draw_text,
     draw_triangle,
+    draw_truss,
     svg_instantiate,
     svg_sync,
 };

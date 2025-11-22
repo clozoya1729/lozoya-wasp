@@ -5,17 +5,22 @@ body {
     font-size: 8pt;
 }
 
-#ui {
-    margin-bottom: 10px;
+.dark {
+    canvas {
+        background: #000;
+        border-radius: 8px;
+        display: block;
+        margin: 16px 0;
+    }
 }
 
-label {
-    margin-right: 18px;
-}
-
-#form-parameters label {
-    display: block;
-    margin-bottom: 6px;
+.light {
+    canvas {
+        background: #fff;
+        border-radius: 8px;
+        display: block;
+        margin: 16px 0;
+    }
 }
 
 #btn-play i {
@@ -51,54 +56,12 @@ label {
     opacity: 0.7;
 }
 
-#speed-group {
-    background-color: #222;
-    border-radius: 4px;
-}
-
-#speed-group .input-group-text i {
-    color: #fff;
-}
-
-#speed-group .input-group-text {
-    background-color: transparent;
-    border: 1px solid #788;
-    padding: 0 4px;
-}
-
-#speed-group input {
-    background-color: #222;
-    color: #fff;
-    border: 1px solid #788;
-}
-
-#speed:hover {
-    background-color: #000;
-    border: 1px solid #fff;
-}
-
-#speed-group input:focus {
-    outline: none;
-    box-shadow: none;
-    background-color: #000;
-}
-
-#group-playback {
-    border: 1px solid #788;
-    border-radius: 4px;
-}
-
 .btn-stack {
     display: flex;
     flex-direction: column;
     align-items: center;
     line-height: 1;
     gap: 1px
-}
-
-.label {
-    color: white;
-    font-size: .6rem;
 }
 
 .btn:hover {
@@ -147,20 +110,66 @@ label {
     opacity: .7
 }
 
-.dark {
-    canvas {
-        background: #000;
-        border-radius: 8px;
-        display: block;
-        margin: 16px 0;
-    }
+#form-parameters label {
+    display: block;
+    margin-bottom: 6px;
 }
 
-.light {
-    canvas {
-        background: #fff;
-        border-radius: 8px;
-        display: block;
-        margin: 16px 0;
-    }
+#group-playback {
+    border: 1px solid #788;
+    border-radius: 4px;
+}
+
+.label {
+    color: white;
+    font-size: .6rem;
+}
+
+label {
+    margin-right: 18px;
+}
+
+.navbar-brand {
+    font-size: 8pt;
+}
+
+.plot {
+    height: 200px;
+    width: 400px;
+}
+
+#speed-group {
+    background-color: #222;
+    border-radius: 4px;
+}
+
+#speed-group .input-group-text i {
+    color: #fff;
+}
+
+#speed-group .input-group-text {
+    background-color: transparent;
+    border: 1px solid #788;
+    padding: 0 4px;
+}
+
+#speed-group input {
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #788;
+}
+
+#speed:hover {
+    background-color: #000;
+    border: 1px solid #fff;
+}
+
+#speed-group input:focus {
+    outline: none;
+    box-shadow: none;
+    background-color: #000;
+}
+
+#ui {
+    margin-bottom: 10px;
 }

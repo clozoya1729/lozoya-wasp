@@ -1,5 +1,59 @@
 let COLLISION_SHAPES = [];
 
+class SVG {
+    constructor(canvas, templateId, parameters = {}) {
+        let {
+            anchor = 'origin',
+            orientation = 0,
+            position = {x: 0, y: 0},
+            size = 100,
+            zIndex = 10,
+        } = parameters;
+        this.canvas = canvas;
+        this.anchor = anchor;
+        this.orientation = orientation;
+        this.position = position;
+        this.size = size;
+        this.templateId = templateId;
+        this.template = document.getElementById(this.templateId);
+        if (!this.template) {
+            throw new Error('SVG template not found: ' + this.templateId);
+        }
+        this.svg = this.template.cloneNode(true);
+        this.svg.removeAttribute('id');
+        this.svg.style.position = 'absolute';
+        this.svg.style.left = '0px';
+        this.svg.style.top = '0px';
+        this.svg.style.width = size + 'px';
+        this.svg.style.height = size + 'px';
+        this.svg.style.pointerEvents = 'none';
+        this.svg.style.transformBox = 'fill-box';
+        this.svg.style.zIndex = String(zIndex);
+        this.svg.dataset.anchor = anchor;
+        this.svg.style.transformOrigin = this.svg.dataset.anchor === 'origin' ? '0 0' : '50% 50%';
+        document.body.appendChild(this.svg);
+    }
+
+    sync() {
+        const rect = this.canvas.getBoundingClientRect();
+        const sx = rect.width / this.canvas.width;
+        const sy = rect.height / this.canvas.height;
+        if (this.size != null) {
+            this.svg.style.width = this.size + 'px';
+            this.svg.style.height = this.size + 'px';
+        }
+        const w = parseFloat(this.svg.style.width) || this.size;
+        const h = parseFloat(this.svg.style.height) || w;
+        const left = rect.left + window.scrollX + this.position.x * sx - (this.anchor === 'center' ? w / 2 : 0);
+        const top = rect.top + window.scrollY + this.position.y * sy - (this.anchor === 'center' ? h / 2 : 0);
+        this.svg.style.left = left + 'px';
+        this.svg.style.top = top + 'px';
+        if (this.orientation != null) {
+            this.svg.style.transform = 'rotate(' + (this.orientation * 180 / Math.PI) + 'deg)';
+        }
+    }
+}
+
 function draw_circle(ctx, parameters = {}) {
     let {
         radius = 1,
@@ -245,51 +299,18 @@ function draw_truss(ctx, parameters = {}) {
             const gx = coordinate[0] + cxLocal * cosT - cyLocal * sinT;
             const gy = coordinate[1] + cxLocal * sinT + cyLocal * cosT;
             const angleGlobal = orientation + angleLocal;
-            collision_register({type: 'rect', cx: gx, cy: gy, w: L, h: thickness, angle: angleGlobal, meta: meta ?? {kind: 'truss', elementIndex: k}});
+            collision_register({
+                type: 'rect',
+                cx: gx,
+                cy: gy,
+                w: L,
+                h: thickness,
+                angle: angleGlobal,
+                meta: meta ?? {kind: 'truss', elementIndex: k}
+            });
         }
     }
     ctx.restore();
-}
-
-function svg_instantiate(templateId, parameters = {}) {
-    let {
-        size = 100,
-        anchor = 'origin',  // 'center' or 'origin
-        zIndex = 10,
-    } = parameters;
-    const template = document.getElementById(templateId);
-    const clone = template.cloneNode(true);
-    clone.removeAttribute('id');
-    clone.style.position = 'absolute';
-    clone.style.left = '0px';
-    clone.style.top = '0px';
-    clone.style.width = size + 'px';
-    clone.style.height = size + 'px';
-    clone.style.pointerEvents = 'none';
-    clone.style.transformBox = 'fill-box';
-    clone.style.zIndex = String(zIndex);
-    clone.dataset.anchor = anchor;
-    clone.style.transformOrigin = clone.dataset.anchor === 'origin' ? '0 0' : '50% 50%';
-    document.body.appendChild(clone);
-    return clone;
-}
-
-function svg_sync(canvas, svg, position, orientation = 0, size = 100) {
-    const rect = canvas.getBoundingClientRect();
-    const sx = rect.width / canvas.width;
-    const sy = rect.height / canvas.height;
-    if (size != null) {
-        svg.style.width = size + 'px';
-        svg.style.height = size + 'px';
-    }
-    const w = parseFloat(svg.style.width) || size;
-    const h = parseFloat(svg.style.height) || w;
-    const anchor = svg.dataset.anchor || 'center';
-    const left = rect.left + window.scrollX + position.x * sx - (anchor === 'center' ? w / 2 : 0);
-    const top = rect.top + window.scrollY + position.y * sy - (anchor === 'center' ? h / 2 : 0);
-    svg.style.left = left + 'px';
-    svg.style.top = top + 'px';
-    if (orientation != null) svg.style.transform = 'rotate(' + (orientation * 180 / Math.PI) + 'deg)';
 }
 
 function collision_reset() {
@@ -317,6 +338,5 @@ export {
     draw_text,
     draw_triangle,
     draw_truss,
-    svg_instantiate,
-    svg_sync,
+    SVG,
 };

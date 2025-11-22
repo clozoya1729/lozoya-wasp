@@ -1,4 +1,4 @@
-import {Lidar} from "./sensor.js";
+import {Lidar} from "./object/sensor.js";
 import {PlannerWASP} from "./planners/wasp.js";
 
 let themeDark = {
@@ -22,6 +22,7 @@ let themeLight = {
     colorLidarNoHit: '#08f'
 };
 const THEME = {
+    div: document.getElementById('theme'),
     dark: themeDark,
     light: themeLight,
 }
@@ -55,12 +56,11 @@ const AGENTS_ASSEMBLY_CONFIG = [
         positionX: 100,
         positionY: 200,
         speed: 50,
-        targetX: 550,
+        targetX: 600,
         targetY: 100,
         targetOrientation: Math.PI,
         lidar: new Lidar(),
         planner: new PlannerWASP(),
-        svgTemplate: 'agent-template',
     },
     {
         name: 'Agent 1',
@@ -72,7 +72,6 @@ const AGENTS_ASSEMBLY_CONFIG = [
         targetOrientation: 0,
         lidar: new Lidar(),
         planner: new PlannerWASP(),
-        svgTemplate: 'agent-template',
     },
 ];
 const OBSTACLES_CONFIG = [
@@ -123,15 +122,14 @@ const OBSTACLES_CONFIG = [
 const R = 100;
 const w = 0.1;
 const OBSTACLES_ASSEMBLY_CONFIG = [
-    // {
-    //     name: 'Dynamic Obstacle',
-    //     positionX: 320,
-    //     positionY: 150,
-    //     velocityX: (t) => 10,
-    //     velocityY: (t) => R * w * Math.cos(w * t),
-    //     radius: 60,
-    //     svgTemplate: 'agent-template',
-    // },
+    {
+        name: 'Dynamic Obstacle',
+        positionX: 320,
+        positionY: 150,
+        velocityX: (t) => 10,
+        velocityY: (t) => R * w * Math.cos(w * t),
+        radius: 40,
+    },
 ];
 const TRUSS_NODES = [
     // bottom chord (left to right)
@@ -174,6 +172,6 @@ const TRUSS = {
 export let CONFIGURATION = {
     agents: AGENTS_ASSEMBLY_CONFIG,
     environment: TRUSS,
-    obstacles: OBSTACLES_ASSEMBLY_CONFIG,
+    obstacles: null,//OBSTACLES_ASSEMBLY_CONFIG,
     theme: THEME,
 }

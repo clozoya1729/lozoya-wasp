@@ -1,4 +1,4 @@
-import {draw_circle, draw_rectangle, draw_text, svg_instantiate, svg_sync} from './canvas.js';
+import {draw_circle, draw_rectangle, draw_text, SVG} from '../canvas.js';
 
 class Obstacle {
     constructor(parameters) {
@@ -34,8 +34,13 @@ class Obstacle {
         this.svg = null;
         this.t = 0;
         if (this.canvas && this.svgTemplate) {
-            this.svg = svg_instantiate(this.svgTemplate, {size: 3 * this.radius});
-            svg_sync(this.canvas, this.svg, {x: this.positionX, y: this.positionY}, 0, this.svgSize);
+            this.svg = new SVG(this.canvas, this.svgTemplate, {
+                position: {x: this.positionX, y: this.positionY},
+                orientation: 0,
+                size: this.svgSize,
+                zIndex: 10,
+            });
+            this.svg.sync();
         }
     }
 
@@ -63,8 +68,12 @@ class Obstacle {
             orientation: 0,
             opacityFill: 0.5,
         });
-        if (this.canvas && this.svgTemplate) {
-            svg_sync(this.canvas, this.svg, {x: this.positionX, y: this.positionY}, 0, this.svgSize);
+        if (this.svg) {
+            this.svg.position.x = this.positionX;
+            this.svg.position.y = this.positionY;
+            this.svg.orientation = 0;
+            this.svg.size = this.svgSize;
+            this.svg.sync();
         }
         if (this.name) {
             draw_text(ctx, {

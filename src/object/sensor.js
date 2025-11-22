@@ -1,5 +1,5 @@
-import {draw_circle, draw_line} from "./canvas.js";
-import {gaussian_noise} from "./math.js";
+import {draw_circle, draw_line} from "../canvas.js";
+import {gaussian_noise} from "../math.js";
 
 class Lidar {
     constructor(parameters = {}) {
@@ -217,6 +217,10 @@ class Lidar {
     get_lidar_hits(getCirclesFn) {
         const circles = getCirclesFn();
         return this.cast_lidar_circles(this.position, this.orientation, circles);
+    }
+
+    step() {
+
     }
 
     draw(ctx, position, orientation, circles, parameters = {}) {

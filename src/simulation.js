@@ -1,6 +1,6 @@
-import {Agent} from "./agent.js";
+import {Agent} from "./object/agent.js";
 import {collision_get, collision_reset, draw_truss} from "./canvas.js";
-import {Obstacle} from "./obstacle.js";
+import {Obstacle} from "./object/obstacle.js";
 import {CONFIGURATION} from './configuration.js';
 
 // parameters
@@ -16,16 +16,14 @@ const btnPlay = document.getElementById('btn-play');
 const btnStep = document.getElementById('btn-step');
 const btnStop = document.getElementById('btn-stop');
 // theme
-const themeDiv = document.getElementById('theme');
-let theme = themeDiv.classList.contains('dark') ? CONFIGURATION.theme.dark : CONFIGURATION.theme.light;
+let theme = CONFIGURATION.theme.div.classList.contains('dark') ? CONFIGURATION.theme.dark : CONFIGURATION.theme.light;
 const lblPlay = document.getElementById('lbl-play');
 const lblTheme = document.getElementById('lbl-theme');
 window.theme_onclick = function () {
-    const themeDiv = document.getElementById('theme');
     const icon = document.querySelector('#btn-theme i');
-    const goingDark = !themeDiv.classList.contains('dark');
-    themeDiv.classList.toggle('dark', goingDark);
-    themeDiv.classList.toggle('light', !goingDark);
+    const goingDark = !CONFIGURATION.theme.div.classList.contains('dark');
+    CONFIGURATION.theme.div.classList.toggle('dark', goingDark);
+    CONFIGURATION.theme.div.classList.toggle('light', !goingDark);
     icon.className = goingDark ? 'bi bi-sun' : 'bi bi-moon';
     if (lblTheme) lblTheme.textContent = goingDark ? 'Light' : 'Dark';
     for (const agent of agents || []) {
@@ -148,7 +146,7 @@ function simulation_draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const obstacle of obstacles) obstacle.draw(ctx);
     for (const agent of agents) agent.draw(ctx);
-    // draw_truss(ctx, {...CONFIGURATION.environment, collision: true});
+    //draw_truss(ctx, {...CONFIGURATION.environment, collision: true});
     const shapes = collision_get();
     for (const agent of agents) {
         const collisionGeometry = shapes.filter(s => !(s.meta && s.meta.kind === 'agent' && s.meta.name === agent.name));
@@ -159,7 +157,6 @@ function simulation_draw() {
         });
     }
 }
-
 
 window.onload = () => {
     simulation_reinstantiate_from_configs();

@@ -1,4 +1,12 @@
 import {PlannerInterface} from './planner.js';
+import {
+    compute_arc_length_table,
+    evaluate_quintic_2d,
+    fit_quintic,
+    get_t_for_arc_length,
+    quintic_tangent,
+    tangent_vector
+} from '../math.js';
 
 class PlannerWASP extends PlannerInterface {
     constructor(parameters = {}) {

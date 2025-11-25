@@ -94,23 +94,23 @@ function smooth(data, windowSize = 7) {
 
 function derivative_central(data, time) {
     // central difference derivative with variable timestep
-    let res = [];
+    let result = [];
     for (let i = 0; i < data.length; i++) {
         if (i === 0) { // forward difference at start
             let dt = time[i + 1] - time[i];
             if (dt === 0) dt = 1e-6;
-            res.push((data[i + 1] - data[i]) / dt);
+            result.push((data[i + 1] - data[i]) / dt);
         } else if (i === data.length - 1) { // backward difference at end
             let dt = time[i] - time[i - 1];
             if (dt === 0) dt = 1e-6;
-            res.push((data[i] - data[i - 1]) / dt);
+            result.push((data[i] - data[i - 1]) / dt);
         } else { // central difference
             let dt = time[i + 1] - time[i - 1];
             if (dt === 0) dt = 1e-6;
-            res.push((data[i + 1] - data[i - 1]) / dt);
+            result.push((data[i + 1] - data[i - 1]) / dt);
         }
     }
-    return res;
+    return result;
 }
 
 

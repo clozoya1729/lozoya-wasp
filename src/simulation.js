@@ -1,5 +1,5 @@
 import {Agent} from "./object/agent.js";
-import {collision_get, collision_reset, draw_truss} from "./canvas.js";
+import {collision_geometry_get, collision_geometry_reset, draw_truss,} from "./canvas.js";
 import {Obstacle} from "./object/obstacle.js";
 import {CONFIGURATION} from './configuration.js';
 
@@ -11,10 +11,6 @@ let animationActive = false;
 let simulationSpeed = 1;
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-// controls
-const btnPlay = document.getElementById('btn-play');
-const btnStep = document.getElementById('btn-step');
-const btnStop = document.getElementById('btn-stop');
 // theme
 let theme = CONFIGURATION.theme.div.classList.contains('dark') ? CONFIGURATION.theme.dark : CONFIGURATION.theme.light;
 const lblPlay = document.getElementById('lbl-play');
@@ -27,12 +23,16 @@ window.theme_onclick = function () {
     icon.className = goingDark ? 'bi bi-sun' : 'bi bi-moon';
     if (lblTheme) lblTheme.textContent = goingDark ? 'Light' : 'Dark';
     for (const agent of agents || []) {
-        agent.colorTrail = goingDark ? CONFIGURATION.theme.dark.colorTrail : CONFIGURATION.theme.light.colorTrail;
-        agent.colorPath = goingDark ? CONFIGURATION.theme.dark.colorPath : CONFIGURATION.theme.light.colorPath;
+        agent.renderParameters.colorTrail = goingDark ? CONFIGURATION.theme.dark.colorTrail : CONFIGURATION.theme.light.colorTrail;
+        agent.renderParameters.colorPath = goingDark ? CONFIGURATION.theme.dark.colorPath : CONFIGURATION.theme.light.colorPath;
     }
     simulation_draw();
     simulation_controls_update();
 };
+// controls
+const btnPlay = document.getElementById('btn-play');
+const btnStep = document.getElementById('btn-step');
+const btnStop = document.getElementById('btn-stop');
 window.play_pause = function () {
     animationActive = !animationActive;
     if (animationActive) {
@@ -63,11 +63,6 @@ speedInput.addEventListener('input', () => {
     speedInput.value = simulationSpeed.toFixed(1);
 });
 
-function get_collision_geometry(excludeAgentName) {
-    const shapes = collision_get();
-    return shapes.filter(s => !(s.meta && s.meta.kind === 'agent' && s.meta.name === excludeAgentName));
-}
-
 function simulation_controls_update() {
     const icon = btnPlay.querySelector('i');
     if (animationActive) {
@@ -95,7 +90,7 @@ function run_frame(dt) {
         obstacle.step(dt);
     }
     for (const agent of agents) {
-        agent.step(performance.now(), dt, get_collision_geometry, agent.svgSize);
+        agent.step(performance.now(), dt, collision_geometry_get, agent.svgSize);
     }
     simulation_draw();
 }
@@ -109,19 +104,25 @@ function simulation_reinstantiate_from_configs() {
         obstacle.undraw(ctx);
     }
     if (CONFIGURATION.agents) {
-        agents = CONFIGURATION.agents.map(cfg => new Agent({
-            ...cfg,
-            canvas: canvas,
-            colorPath: theme.colorPath,
-            colorTrail: theme.colorTrail,
-            colorBodyFill: theme.colorBodyFill,
-            colorBodyOutline: theme.colorBodyOutline,
+        agents = CONFIGURATION.agents.map(configuration => new Agent({
+            ...configuration,
+            renderParameters: {
+                canvas: canvas,
+                colorPath: theme.colorPath,
+                colorTrail: theme.colorTrail,
+                colorBodyFill: theme.colorBodyFill,
+                colorBodyOutline: theme.colorBodyOutline,
+                ...configuration.renderParameters,
+            },
         }));
     }
     if (CONFIGURATION.obstacles) {
-        obstacles = CONFIGURATION.obstacles.map(cfg => new Obstacle({
-            ...cfg,
-            canvas: canvas,
+        obstacles = CONFIGURATION.obstacles.map(configuration => new Obstacle({
+            ...configuration,
+            renderParameters: {
+                canvas: canvas,
+                ...configuration.renderParameters,
+            },
         }));
     }
 }
@@ -142,19 +143,20 @@ function simulation_animate(ts) {
 }
 
 function simulation_draw() {
-    collision_reset();
+    collision_geometry_reset();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const obstacle of obstacles) obstacle.draw(ctx);
-    for (const agent of agents) agent.draw(ctx);
-    //draw_truss(ctx, {...CONFIGURATION.environment, collision: true});
-    const shapes = collision_get();
+    for (const env of CONFIGURATION.environment) {
+        draw_truss(ctx, {...env.truss, collision: true});
+    }
+    for (const obstacle of obstacles) {
+        obstacle.draw(ctx);
+    }
     for (const agent of agents) {
-        const collisionGeometry = shapes.filter(s => !(s.meta && s.meta.kind === 'agent' && s.meta.name === agent.name));
-        agent.lidar.draw(ctx, agent.p1, agent.orientation, collisionGeometry, {
-            numRays: agent.lidar.numRays,
-            fov: agent.lidar.fov,
-            range: agent.lidar.range,
-        });
+        agent.draw(ctx);
+    }
+    for (const agent of agents) {
+        const collisionGeometry = collision_geometry_get(agent.name);
+        agent.lidar.draw(ctx, collisionGeometry);
     }
 }
 

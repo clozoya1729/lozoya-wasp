@@ -1,6 +1,6 @@
-import {Lidar} from "./object/sensor.js";
 import {PlannerWASP} from "./planners/wasp.js";
-
+import {PlannerRRTStar} from "./planners/rrt.js";
+//theme
 let themeDark = {
     colorTrail: '#fff',
     colorPath: '#ffd600',
@@ -26,7 +26,8 @@ const THEME = {
     dark: themeDark,
     light: themeLight,
 }
-const AGENTS_CONFIG = [
+// scenario 1
+const AGENT_CONFIG1 = [
     {
         name: 'Agent 0',
         positionX: 100,
@@ -34,101 +35,99 @@ const AGENTS_CONFIG = [
         speed: 50,
         targetX: 700,
         targetY: 100,
-        lidar: new Lidar(),
-        planner: new PlannerWASP(),
         svgTemplate: 'agent-template',
     },
     {
         name: 'Agent 1',
         positionX: 750,
         positionY: 300,
+        orientation: Math.PI / 2,
         speed: 50,
         targetX: 100,
         targetY: 200,
-        lidar: new Lidar(),
-        planner: new PlannerWASP(),
         svgTemplate: 'agent-template',
     },
 ]
-const AGENTS_ASSEMBLY_CONFIG = [
+const OBSTACLE_CONFIG1 = [
     {
-        name: 'Agent 0',
-        positionX: 100,
-        positionY: 200,
-        speed: 50,
-        targetX: 600,
-        targetY: 100,
-        targetOrientation: Math.PI,
-        lidar: new Lidar(),
-        planner: new PlannerWASP(),
-    },
-    {
-        name: 'Agent 1',
-        positionX: 600,
-        positionY: 300,
-        speed: 50,
-        targetX: 100,
-        targetY: 100,
-        targetOrientation: 0,
-        lidar: new Lidar(),
-        planner: new PlannerWASP(),
-    },
-];
-const OBSTACLES_CONFIG = [
-    {
-        name: 'Static',
+        name: 'Static Obstacle',
         positionX: 320,
         positionY: 150,
         radius: 60,
         svgTemplate: 'agent-template',
     },
-    // {
-    //     name: 'Dynamic',
-    //     positionX: canvas.width - 300,
-    //     positionY: 300,
-    //     velocityX: -20,
-    // },
-    // {
-    //     positionX: 800 + 30,
-    //     positionY: 300,
-    //     velocityX: -50,
-    // },
-    // {
-    //     positionX: 800 + 30,
-    //     positionY: 100,
-    //     velocityX: -10,
-    // },
-    // {
-    //     positionX: 800 + 100,
-    //     positionY: 250,
-    //     velocityX: -40,
-    // },
-    // {
-    //     positionX: 800 / 1.75,
-    //     positionY: 0,
-    //     velocityY: 25,
-    // },
-    // {
-    //     positionX: 800 / 1.5,
-    //     positionY: -200,
-    //     velocityY: 30,
-    // },
-    // {
-    //     positionX: 800 / 3,
-    //     positionY: 100,
-    //     velocityY: 20,
-    // }
+    {
+        name: 'Dynamic Obstacle 1',
+        positionX: 500,
+        positionY: 300,
+        velocityX: -20,
+    },
+    {
+        name: 'Dynamic Obstacle 2',
+        positionX: 450,
+        positionY: 0,
+        velocityY: 20,
+    },
 ];
-const R = 100;
-const w = 0.1;
-const OBSTACLES_ASSEMBLY_CONFIG = [
+const ENVIRONMENT_CONFIG1 = [
+];
+// scenario 2
+const AGENT_CONFIG2 = [
+    {
+        name: 'Agent 0',
+        positionX: 100,
+        positionY: 200,
+        speed: 50,
+        targetX: 550,
+        targetY: 100,
+        targetOrientation: Math.PI,
+        lidarParameters: {
+            range: 40,
+            fov: Math.PI / 2,
+            numRays: 9,
+        },
+        // planner: PlannerWASP,
+        // plannerParameters: {
+        //     speed: 50,
+        // },
+        planner: PlannerRRTStar,
+        plannerParameters: {
+            maxIterations: 1500,
+            stepSize: 30,
+            rewireRadius: 50,
+            minX: 0,
+            maxX: canvas.width,
+            minY: 0,
+            maxY: canvas.height,
+        },
+    },
+    {
+        name: 'Agent 1',
+        positionX: 600,
+        positionY: 250,
+        speed: 50,
+        targetX: 150,
+        targetY: 100,
+        targetOrientation: 0,
+        planner: PlannerWASP,
+        plannerParameters: {
+            speed: 50,
+        },
+    },
+];
+const R = 20;
+const w = 1;
+const OBSTACLE_CONFIG2 = [
     {
         name: 'Dynamic Obstacle',
-        positionX: 320,
+        positionX: 1,
         positionY: 150,
-        velocityX: (t) => 10,
-        velocityY: (t) => R * w * Math.cos(w * t),
-        radius: 40,
+        velocityX: 40,
+        velocityY: (x, y, t) => R * w * Math.cos(w * t),
+        radius: 20,
+        renderParameters: {
+            intervalTrail: 0.2,
+        }
     },
 ];
 const TRUSS_NODES = [
@@ -169,9 +168,23 @@ const TRUSS = {
     orientation: 0,
     thickness: 4,
 }
-export let CONFIGURATION = {
-    agents: AGENTS_ASSEMBLY_CONFIG,
-    environment: TRUSS,
-    obstacles: null,//OBSTACLES_ASSEMBLY_CONFIG,
+const ENVIRONMENT_CONFIG2 = [
+    {
+        truss: TRUSS,
+    },
+];
+// scenarios
+let scenario1 = {
+    agents: AGENT_CONFIG1,
+    environment: ENVIRONMENT_CONFIG1,
+    obstacles: OBSTACLE_CONFIG1,
     theme: THEME,
-}
+};
+let scenario2 = {
+    agents: AGENT_CONFIG2,
+    environment: ENVIRONMENT_CONFIG2,
+    obstacles: OBSTACLE_CONFIG2,
+    theme: THEME,
+};
+
+export let CONFIGURATION = scenario1;

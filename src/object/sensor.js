@@ -5,7 +5,7 @@ class Lidar {
     constructor(parameters = {}) {
         let {
             numRays = 9,        // int
-            range = 20,         // float, m
+            range = 40,         // float, m
             fov = Math.PI / 2,  // float, radians
             bufferLength = 10,  // int
         } = parameters;
@@ -113,10 +113,14 @@ class Lidar {
         const oy = y0 - y1;
         const det = -dx * sy + dy * sx;
         const eps = 1e-9;
-        if (Math.abs(det) < eps) return null;
+        if (Math.abs(det) < eps) {
+            return null;
+        }
         const t = (ox * sy - oy * sx) / det;
         const u = (-dx * oy + dy * ox) / det;
-        if (t <= eps || t >= maxRange || u < 0 || u > 1) return null;
+        if (t <= eps || t >= maxRange || u < 0 || u > 1) {
+            return null;
+        }
         return {x: x0 + t * dx, y: y0 + t * dy, dist: t};
     }
 
@@ -140,8 +144,12 @@ class Lidar {
             const a = corners[i];
             const b = corners[(i + 1) % 4];
             const hSeg = this.ray_intersect_segment(x0, y0, theta, a.x, a.y, b.x, b.y, maxRange);
-            if (!hSeg) continue;
-            if (!best || hSeg.dist < best.dist) best = hSeg;
+            if (!hSeg) {
+                continue;
+            }
+            if (!best || hSeg.dist < best.dist) {
+                best = hSeg;
+            }
         }
         return best;
     }
@@ -192,7 +200,7 @@ class Lidar {
         return v;
     }
 
-    cast_lidar_circles(position, orientation, shapes) {
+    cast_lidar_circles(position, orientation, collisionGeometry) {
         const hits = [];
         const angles = [];
         const denom = this.numRays > 1 ? (this.numRays - 1) : 1;
@@ -200,13 +208,21 @@ class Lidar {
             const offset = this.numRays > 1 ? (i / denom - 0.5) * this.fov : 0;
             const angle = orientation + offset;
             let best = null;
-            for (let j = 0; j < shapes.length; ++j) {
-                const s = shapes[j];
+            for (let j = 0; j < collisionGeometry.length; ++j) {
+                const s = collisionGeometry[j];
                 const type = s.type ?? 'circle';
                 let h = null;
-                if (type === 'circle' || s.r != null) h = this.ray_intersect_circle(position.x, position.y, angle, s.cx, s.cy, s.r, this.range); else if (type === 'rect') h = this.ray_intersect_rect(position.x, position.y, angle, s, this.range);
-                if (!h) continue;
-                if (!best || h.dist < best.dist) best = {...h, shapeIndex: j, meta: s.meta};
+                if (type === 'circle' || s.r != null) {
+                    h = this.ray_intersect_circle(position.x, position.y, angle, s.cx, s.cy, s.r, this.range);
+                } else if (type === 'rect') {
+                    h = this.ray_intersect_rect(position.x, position.y, angle, s, this.range);
+                }
+                if (!h) {
+                    continue;
+                }
+                if (!best || h.dist < best.dist) {
+                    best = {...h, shapeIndex: j, meta: s.meta};
+                }
             }
             if (best) hits.push({...best, angle});
             angles.push(angle);
@@ -223,21 +239,23 @@ class Lidar {
 
     }
 
-    draw(ctx, position, orientation, circles, parameters = {}) {
-        let {
-            numRays = 9,
-            fov = Math.PI / 2,
-            range = 60,
-        } = parameters;
-        const cast = this.cast_lidar_circles(position, orientation, circles)
+    draw(ctx, collisionGeometry) {
+        // draw_circle(ctx, {
+        //     radius: this.range,
+        //     centroid: [this.position.x, this.position.y],
+        //     colorOutline: '#0ff',
+        //     opacityFill: 0.1,
+        //     opacityOutline: 0.4,
+        // });
+        const cast = this.cast_lidar_circles(this.position, this.orientation, collisionGeometry)
         for (let i = 0; i < cast.angles.length; ++i) {
             const angle = cast.angles[i]
             const h = cast.hits.find(k => Math.abs(k.angle - angle) < 1e-6)
-            const len = h ? h.dist : range
-            const x1 = position.x + len * Math.cos(angle)
-            const y1 = position.y + len * Math.sin(angle)
+            const len = h ? h.dist : this.range
+            const x1 = this.position.x + len * Math.cos(angle)
+            const y1 = this.position.y + len * Math.sin(angle)
             draw_line(ctx, {
-                start: [position.x, position.y],
+                start: [this.position.x, this.position.y],
                 end: [x1, y1],
                 color: '#4dd0e1',
                 opacity: 0.6,
@@ -248,7 +266,7 @@ class Lidar {
             centroid: [h.x, h.y],
             colorOutline: '#a00',
             colorFill: '#f00',
-            opacityFill: 1
+            opacityFill: 1,
         })
     }
 }

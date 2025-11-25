@@ -81,7 +81,7 @@ function draw_circle(ctx, parameters = {}) {
     ctx.setLineDash([]);
     ctx.restore();
     if (collision) {
-        collision_register({type: 'circle', cx: centroid[0], cy: centroid[1], r: radius, meta});
+        collision_geometry_register({type: 'circle', cx: centroid[0], cy: centroid[1], r: radius, meta});
     }
 }
 
@@ -157,7 +157,7 @@ function draw_rectangle(ctx, parameters = {}) {
     ctx.stroke();
     ctx.restore();
     if (collision) {
-        collision_register({
+        collision_geometry_register({
             type: 'rect',
             cx: coordinate[0],
             cy: coordinate[1],
@@ -168,6 +168,243 @@ function draw_rectangle(ctx, parameters = {}) {
         });
     }
 
+}
+
+function draw_robot_arm(ctx, parameters = {}) {
+    let {
+        scale = 1,
+        name = '',
+        position = {x: 0, y: 0},
+        orientation = 0,
+        colorBodyFill = '#888',
+        colorBodyOutline = '#000',
+        collision = false,
+        meta = null,
+    } = parameters;
+    const s = scale;
+    let frame = {
+        x: position.x,
+        y: position.y,
+        angle: orientation,
+    };
+    const stack = [];
+
+    function pushFrame() {
+        stack.push({...frame});
+    }
+
+    function popFrame() {
+        frame = stack.pop();
+    }
+
+    function rotateFrame(delta) {
+        frame.angle += delta;
+    }
+
+    function translateFrameLocal(dx, dy) {
+        const cosA = Math.cos(frame.angle);
+        const sinA = Math.sin(frame.angle);
+        frame.x += s * (dx * cosA - dy * sinA);
+        frame.y += s * (dx * sinA + dy * cosA);
+    }
+
+    function worldPoint(localX, localY) {
+        const cosA = Math.cos(frame.angle);
+        const sinA = Math.sin(frame.angle);
+        return {
+            x: frame.x + s * (localX * cosA - localY * sinA),
+            y: frame.y + s * (localX * sinA + localY * cosA),
+        };
+    }
+
+    // base at origin
+    draw_rectangle(ctx, {
+        coordinate: [position.x, position.y],
+        orientation: orientation,
+        colorFill: colorBodyFill,
+        colorOutline: colorBodyOutline,
+        height: 30,
+        width: 30,
+        opacityFill: 0.5,
+        collision: collision,
+        meta: meta,
+    });
+    {
+        const c = worldPoint(0, 0);
+        draw_circle(ctx, {
+            radius: 10 * s,
+            centroid: [c.x, c.y],
+            colorFill: '#f64',
+            colorOutline: '#000',
+            opacityFill: 1,
+            opacityOutline: 1,
+            collision: collision,
+            meta,
+        });
+    }
+    // first link
+    pushFrame();
+    rotateFrame(0);
+    {
+        const cRect = worldPoint(22.5, 0);
+        draw_rectangle(ctx, {
+            coordinate: [cRect.x, cRect.y],
+            width: 45 * s,
+            height: 12 * s,
+            orientation: frame.angle,
+            colorFill: '#aaa',
+            colorOutline: '#000',
+            opacityFill: 1,
+            opacityOutline: 1,
+            collision: collision,
+            meta,
+        });
+        const cCircle = worldPoint(45, 0);
+        draw_circle(ctx, {
+            radius: 8 * s,
+            centroid: [cCircle.x, cCircle.y],
+            colorFill: '#f64',
+            colorOutline: '#000',
+            opacityFill: 1,
+            opacityOutline: 1,
+            collision: collision,
+            meta,
+        });
+        // second link
+        pushFrame();
+        translateFrameLocal(45, 0);
+        rotateFrame(-25 * Math.PI / 180);
+        {
+            const cRect2 = worldPoint(20, 0);
+            draw_rectangle(ctx, {
+                coordinate: [cRect2.x, cRect2.y],
+                width: 40 * s,
+                height: 10 * s,
+                orientation: frame.angle,
+                colorFill: '#888',
+                colorOutline: '#000',
+                opacityFill: 1,
+                opacityOutline: 1,
+                collision: collision,
+                meta,
+            });
+            const cCircle2 = worldPoint(40, 0);
+            draw_circle(ctx, {
+                radius: 7 * s,
+                centroid: [cCircle2.x, cCircle2.y],
+                colorFill: '#f64',
+                colorOutline: '#000',
+                opacityFill: 1,
+                opacityOutline: 1,
+                collision: collision,
+                meta,
+            });
+            // third link
+            pushFrame();
+            translateFrameLocal(40, 0);
+            rotateFrame(30 * Math.PI / 180);
+            {
+                const cRect3 = worldPoint(17.5, 0);
+                draw_rectangle(ctx, {
+                    coordinate: [cRect3.x, cRect3.y],
+                    width: 35 * s,
+                    height: 8 * s,
+                    orientation: frame.angle,
+                    colorFill: '#aaa',
+                    colorOutline: '#000',
+                    opacityFill: 1,
+                    opacityOutline: 1,
+                    collision: collision,
+                    meta,
+                });
+                const cCircle3 = worldPoint(35, 0);
+                draw_circle(ctx, {
+                    radius: 6 * s,
+                    centroid: [cCircle3.x, cCircle3.y],
+                    colorFill: '#f64',
+                    colorOutline: '#000',
+                    opacityFill: 1,
+                    opacityOutline: 1,
+                    collision: collision,
+                    meta,
+                });
+                // end effector (gripper)
+                pushFrame();
+                translateFrameLocal(35, 0);
+                {
+                    const cBlock = worldPoint(3, 0);
+                    draw_rectangle(ctx, {
+                        coordinate: [cBlock.x, cBlock.y],
+                        width: 18 * s,
+                        height: 20 * s,
+                        orientation: frame.angle,
+                        colorFill: '#888',
+                        colorOutline: '#000',
+                        opacityFill: 1,
+                        opacityOutline: 1,
+                        collision: collision,
+                        meta,
+                    });
+                    const cBarTop = worldPoint(25, -13);
+                    draw_rectangle(ctx, {
+                        coordinate: [cBarTop.x, cBarTop.y],
+                        width: 26 * s,
+                        height: 6 * s,
+                        orientation: frame.angle,
+                        colorFill: '#888',
+                        colorOutline: '#000',
+                        opacityFill: 1,
+                        opacityOutline: 1,
+                        collision: collision,
+                        meta,
+                    });
+                    const cBarBot = worldPoint(25, 13);
+                    draw_rectangle(ctx, {
+                        coordinate: [cBarBot.x, cBarBot.y],
+                        width: 26 * s,
+                        height: 6 * s,
+                        orientation: frame.angle,
+                        colorFill: '#888',
+                        colorOutline: '#000',
+                        opacityFill: 1,
+                        opacityOutline: 1,
+                        collision: collision,
+                        meta,
+                    });
+                    const cTipTop = worldPoint(38, -13);
+                    draw_rectangle(ctx, {
+                        coordinate: [cTipTop.x, cTipTop.y],
+                        width: 4 * s,
+                        height: 6 * s,
+                        orientation: frame.angle,
+                        colorFill: '#888',
+                        colorOutline: '#000',
+                        opacityFill: 1,
+                        opacityOutline: 1,
+                        collision: collision,
+                        meta,
+                    });
+                    const cTipBot = worldPoint(38, 13);
+                    draw_rectangle(ctx, {
+                        coordinate: [cTipBot.x, cTipBot.y],
+                        width: 4 * s,
+                        height: 6 * s,
+                        orientation: frame.angle,
+                        colorFill: '#888',
+                        colorOutline: '#000',
+                        opacityFill: 1,
+                        opacityOutline: 1,
+                        collision: collision,
+                        meta,
+                    });
+                }
+                popFrame();
+            }
+            popFrame();
+        }
+        popFrame();
+    }
+    popFrame();
 }
 
 function draw_square(ctx, parameters = {}) {
@@ -216,6 +453,7 @@ function draw_triangle(ctx, parameters = {}) {
     let {
         coordinate = [0, 0],
         orientation = 0,
+        size = 1,
         colorFill = '#0ff',
         colorOutline = '#fff',
         opacityFill = 0.1,
@@ -227,9 +465,9 @@ function draw_triangle(ctx, parameters = {}) {
     ctx.translate(coordinate[0], coordinate[1]);
     ctx.rotate(orientation);
     ctx.beginPath();
-    ctx.moveTo(-6, -6);
-    ctx.lineTo(6, 0);
-    ctx.lineTo(-6, 6);
+    ctx.moveTo(-size, -size);
+    ctx.lineTo(1.2 * size, 0);
+    ctx.lineTo(-size, size);
     ctx.closePath();
     ctx.fillStyle = colorFill;
     ctx.globalAlpha = opacityFill;
@@ -252,7 +490,7 @@ function draw_triangle(ctx, parameters = {}) {
             x: coordinate[0] + p.x * cosA - p.y * sinA,
             y: coordinate[1] + p.x * sinA + p.y * cosA,
         }));
-        collision_register({type: 'poly', vertices: verts, meta});
+        collision_geometry_register({type: 'poly', vertices: verts, meta});
     }
 }
 
@@ -291,7 +529,8 @@ function draw_truss(ctx, parameters = {}) {
             orientation: angleLocal,
             colorFill: colorFill,
             colorOutline: colorOutline,
-            opacityFill: 1,
+            opacityFill: 0.5,
+            opacityOutline: 0.5,
         });
         if (collision) {
             const cosT = Math.cos(orientation);
@@ -299,7 +538,7 @@ function draw_truss(ctx, parameters = {}) {
             const gx = coordinate[0] + cxLocal * cosT - cyLocal * sinT;
             const gy = coordinate[1] + cxLocal * sinT + cyLocal * cosT;
             const angleGlobal = orientation + angleLocal;
-            collision_register({
+            collision_geometry_register({
                 type: 'rect',
                 cx: gx,
                 cy: gy,
@@ -313,26 +552,27 @@ function draw_truss(ctx, parameters = {}) {
     ctx.restore();
 }
 
-function collision_reset() {
+function collision_geometry_reset() {
     COLLISION_SHAPES = [];
 }
 
-function collision_register(shape) {
+function collision_geometry_register(shape) {
     COLLISION_SHAPES.push(shape);
 }
 
-function collision_get() {
-    return COLLISION_SHAPES;
+function collision_geometry_get(exclude) {
+    return COLLISION_SHAPES.filter(s => !(s.meta && s.meta.name === exclude));
 }
 
 export {
-    collision_register,
-    collision_reset,
-    collision_get,
+    collision_geometry_register,
+    collision_geometry_reset,
+    collision_geometry_get,
     draw_circle,
     draw_curve,
     draw_line,
     draw_rectangle,
+    draw_robot_arm,
     draw_square,
     draw_tangent,
     draw_text,

@@ -33,17 +33,17 @@ const AGENT_CONFIG1 = [
         positionX: 100,
         positionY: 350,
         speed: 50,
-        targetX: 700,
+        targetX: 600,
         targetY: 100,
         svgTemplate: 'agent-template',
     },
     {
         name: 'Agent 1',
-        positionX: 750,
+        positionX: 650,
         positionY: 300,
         orientation: Math.PI / 2,
         speed: 50,
-        targetX: 100,
+        targetX: 200,
         targetY: 200,
         svgTemplate: 'agent-template',
     },
@@ -86,20 +86,20 @@ const AGENT_CONFIG2 = [
             fov: Math.PI / 2,
             numRays: 9,
         },
-        // planner: PlannerWASP,
-        // plannerParameters: {
-        //     speed: 50,
-        // },
-        planner: PlannerRRTStar,
+        planner: PlannerWASP,
         plannerParameters: {
-            maxIterations: 1500,
-            stepSize: 30,
-            rewireRadius: 50,
-            minX: 0,
-            maxX: canvas.width,
-            minY: 0,
-            maxY: canvas.height,
+            speed: 50,
         },
+        // planner: PlannerRRTStar,
+        // plannerParameters: {
+        //     maxIterations: 1500,
+        //     stepSize: 30,
+        //     rewireRadius: 50,
+        //     minX: 0,
+        //     maxX: canvas.width,
+        //     minY: 0,
+        //     maxY: canvas.height,
+        // },
     },
     {
         name: 'Agent 1',
@@ -120,7 +120,7 @@ const w = 1;
 const OBSTACLE_CONFIG2 = [
     {
         name: 'Dynamic Obstacle',
-        positionX: 1,
+        positionX: 100,
         positionY: 150,
         velocityX: 40,
         velocityY: (x, y, t) => R * w * Math.cos(w * t),
@@ -140,11 +140,11 @@ const TRUSS_NODES = [
     [250, 0],    // 5
     [300, 0],    // 6
     // top chord (no top node at extreme left)
-    [50, -60],   // 7
-    [100, -60],  // 8
-    [150, -60],  // 9
-    [200, -60],  //10
-    [250, -60]   //11
+    [50, -50],   // 7
+    [100, -50],  // 8
+    [150, -50],  // 9
+    [200, -50],  //10
+    [250, -50]   //11
 ];
 const TRUSS_ELEMENTS = [
     // bottom chord
@@ -183,8 +183,8 @@ let scenario1 = {
 let scenario2 = {
     agents: AGENT_CONFIG2,
     environment: ENVIRONMENT_CONFIG2,
-    obstacles: OBSTACLE_CONFIG2,
+    obstacles: null,//OBSTACLE_CONFIG2,
     theme: THEME,
 };
 
-export let CONFIGURATION = scenario1;
+export let CONFIGURATION = scenario2;

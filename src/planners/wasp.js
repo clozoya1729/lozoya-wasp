@@ -48,6 +48,17 @@ class PlannerWASP extends PlannerInterface {
         this.update_spline_from_p1_to_p2();
     }
 
+    record_replan(agent) {
+        if (!agent || !agent.replans) return;
+        agent.replans.push({
+            t: agent.time,
+            x: this.p1.x,
+            y: this.p1.y,
+            orientation: this.p1.orientation
+        });
+        agent.mark_replan(agent.time);
+    }
+
     is_p2_p3() {
         return this.p2.x === this.p3.x && this.p2.y === this.p3.y && this.p2.orientation === this.p3.orientation;
     }
@@ -99,15 +110,18 @@ class PlannerWASP extends PlannerInterface {
             this.p2.x = nextP2.x;
             this.p2.y = nextP2.y;
             this.update_spline_from_p1_to_p2();
+            this.record_replan(agent);
         }
         if (this.avoidActive && hits.length === 0) {
-            if (this.avoidClearTime === null) this.avoidClearTime = ts;
-            else if (ts - this.avoidClearTime > this.avoidResetDelay) {
+            if (this.avoidClearTime === null) {
+                this.avoidClearTime = ts;
+            } else if (ts - this.avoidClearTime > this.avoidResetDelay) {
                 this.p2.x = this.p3.x;
                 this.p2.y = this.p3.y;
                 this.avoidActive = false;
                 this.avoidClearTime = null;
                 this.update_spline_from_p1_to_p2();
+                this.record_replan(agent);
             }
         } else if (hits.length > 0) {
             this.avoidClearTime = null;
@@ -146,6 +160,7 @@ class PlannerWASP extends PlannerInterface {
                 this.p2.x = this.p3.x;
                 this.p2.y = this.p3.y;
                 this.update_spline_from_p1_to_p2();
+                this.record_replan(agent);
             }
         }
         return {

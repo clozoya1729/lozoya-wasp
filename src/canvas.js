@@ -54,6 +54,40 @@ class SVG {
     }
 }
 
+// global camera state
+let CAMERA = {
+    center: {x: 0, y: 0},
+    zoom: 1
+};
+
+function camera_set(parameters = {}) {
+    // set new camera parameters
+    const {center, zoom} = parameters;
+    if (center) {
+        CAMERA.center.x = center.x;
+        CAMERA.center.y = center.y;
+    }
+    if (zoom !== undefined) {
+        CAMERA.zoom = Math.max(0.01, zoom); // avoid negative/zero zoom
+    }
+}
+
+function camera_apply(ctx) {
+    // apply camera transform before drawing
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);     // reset
+    ctx.translate(w / 2, h / 2);            // move to canvas center
+    ctx.scale(CAMERA.zoom, CAMERA.zoom);    // zoom
+    ctx.translate(-CAMERA.center.x, -CAMERA.center.y); // center view on target
+}
+
+function camera_reset(ctx) {
+    // restore normal canvas transform after drawing
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+
 function draw_circle(ctx, parameters = {}) {
     let {
         radius = 1,
@@ -105,6 +139,359 @@ function draw_curve(ctx, points, parameters = {}) {
     }
     ctx.stroke();
     if (dash && dash.length) ctx.setLineDash([]);
+    ctx.restore();
+}
+
+function draw_grid_axes(ctx, parameters = {}) {
+    let {
+        origin = [0, 0],
+        xStep = 50,
+        yStep = 50,
+        colorGrid = '#888',
+        colorAxes = '#000',
+        lineWidthGrid = 1,
+        lineWidthAxes = 1,
+        opacityGrid = 0.2,
+        opacityAxes = 1,
+        dashGrid = [],
+        dashAxes = [],
+        drawTickMarks = true,
+        labelTicks = true,
+        tickSize = 6,            // tick size in pixels
+        font = '10pt Times New Roman',     // label font
+        labelOffset = 3          // small padding for text
+    } = parameters;
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    const x0 = origin[0];
+    const y0 = origin[1];
+    ctx.save();
+    // GRID LINES
+    ctx.lineWidth = lineWidthGrid;
+    ctx.strokeStyle = colorGrid;
+    ctx.globalAlpha = opacityGrid;
+    if (dashGrid.length) ctx.setLineDash(dashGrid);
+    // vertical grid lines
+    if (xStep > 0) {
+        for (let x = x0; x <= w; x += xStep) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+        }
+        for (let x = x0 - xStep; x >= 0; x -= xStep) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+        }
+    }
+    // horizontal grid lines
+    if (yStep > 0) {
+        for (let y = y0; y <= h; y += yStep) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+        }
+        for (let y = y0 - yStep; y >= 0; y -= yStep) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+        }
+    }
+    // AXES
+    ctx.setLineDash([]);
+    ctx.lineWidth = lineWidthAxes;
+    ctx.strokeStyle = colorAxes;
+    ctx.globalAlpha = opacityAxes;
+    if (dashAxes.length) ctx.setLineDash(dashAxes);
+    // y-axis
+    if (x0 >= 0 && x0 <= w) {
+        ctx.beginPath();
+        ctx.moveTo(x0, 0);
+        ctx.lineTo(x0, h);
+        ctx.stroke();
+    }
+    // x-axis
+    if (y0 >= 0 && y0 <= h) {
+        ctx.beginPath();
+        ctx.moveTo(0, y0);
+        ctx.lineTo(w, y0);
+        ctx.stroke();
+    }
+    // TICKS & LABELS
+    if (drawTickMarks || labelTicks) {
+        ctx.setLineDash([]);
+        ctx.strokeStyle = colorAxes;
+        ctx.fillStyle = colorAxes;
+        ctx.lineWidth = 1;
+        ctx.font = font;
+        ctx.globalAlpha = opacityAxes;
+        // ticks along x-axis (horizontal axis)
+        if (y0 >= 0 && y0 <= h && xStep > 0) {
+            for (let x = x0; x <= w; x += xStep) {
+                if (drawTickMarks) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y0 - tickSize / 2);
+                    ctx.lineTo(x, y0 + tickSize / 2);
+                    ctx.stroke();
+                }
+                if (labelTicks) {
+                    const text = String(x - x0);
+                    const width = ctx.measureText(text).width;
+                    ctx.fillText(
+                        text,
+                        x - width / 2,                   // CENTER horizontally
+                        y0 - tickSize - labelOffset      // above axis
+                    );
+                }
+            }
+            for (let x = x0 - xStep; x >= 0; x -= xStep) {
+                if (drawTickMarks) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y0 - tickSize / 2);
+                    ctx.lineTo(x, y0 + tickSize / 2);
+                    ctx.stroke();
+                }
+                if (labelTicks) {
+                    const text = String(x - x0);
+                    const width = ctx.measureText(text).width;
+                    ctx.fillText(
+                        text,
+                        x - width / 2,                   // CENTER horizontally
+                        y0 - tickSize - labelOffset
+                    );
+                }
+            }
+        }
+        // ticks along y-axis (vertical axis)
+        if (x0 >= 0 && x0 <= w && yStep > 0) {
+            for (let y = y0; y <= h; y += yStep) {
+                if (drawTickMarks) {
+                    ctx.beginPath();
+                    ctx.moveTo(x0 - tickSize / 2, y);
+                    ctx.lineTo(x0 + tickSize / 2, y);
+                    ctx.stroke();
+                }
+                if (labelTicks) {
+                    const value = y - y0; // y increases downward
+                    const text = String(value);
+                    const width = ctx.measureText(text).width;
+                    ctx.fillText(
+                        text,
+                        x0 - tickSize - labelOffset - width, // LEFT of axis
+                        y + labelOffset
+                    );
+                }
+            }
+            for (let y = y0 - yStep; y >= 0; y -= yStep) {
+                if (drawTickMarks) {
+                    ctx.beginPath();
+                    ctx.moveTo(x0 - tickSize / 2, y);
+                    ctx.lineTo(x0 + tickSize / 2, y);
+                    ctx.stroke();
+                }
+                if (labelTicks) {
+                    const value = y - y0; // y increases downward
+                    const text = String(value);
+                    const width = ctx.measureText(text).width;
+                    ctx.fillText(
+                        text,
+                        x0 - tickSize - labelOffset - width, // LEFT of axis
+                        y + labelOffset
+                    );
+                }
+            }
+        }
+    }
+    ctx.restore();
+}
+
+function draw_grid_axes_box(ctx, parameters = {}) {
+    let {
+        boxOrigin = [0, 0],   // top-left corner of box (pixel coords)
+        boxWidth = 400,
+        boxHeight = 300,
+        origin = [0, 0],      // logical origin inside the box (pixel coords)
+        xStep = 50,
+        yStep = 50,
+        colorGrid = '#888',
+        colorAxes = '#000',
+        lineWidthGrid = 1,
+        lineWidthAxes = 1,
+        opacityGrid = 0.2,
+        opacityAxes = 1,
+        dashGrid = [],
+        dashAxes = [],
+        drawTickMarks = true,
+        labelTicks = true,
+        tickSize = 6,
+        font = '8pt Times New Roman',
+        labelOffset = 3
+    } = parameters;
+    const boxLeft = boxOrigin[0];
+    const boxTop = boxOrigin[1];
+    const boxRight = boxLeft + boxWidth;
+    const boxBottom = boxTop + boxHeight;
+    const x0 = origin[0];
+    const y0 = origin[1];
+    ctx.save();
+    // GRID LINES (clipped to box only)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(boxLeft, boxTop, boxWidth, boxHeight);
+    ctx.clip();
+    ctx.lineWidth = lineWidthGrid;
+    ctx.strokeStyle = colorGrid;
+    ctx.globalAlpha = opacityGrid;
+    if (dashGrid.length) ctx.setLineDash(dashGrid);
+    if (xStep > 0) {
+        for (let x = x0; x <= boxRight; x += xStep) {
+            if (x < boxLeft) continue;
+            ctx.beginPath();
+            ctx.moveTo(x, boxTop);
+            ctx.lineTo(x, boxBottom);
+            ctx.stroke();
+        }
+        for (let x = x0 - xStep; x >= boxLeft; x -= xStep) {
+            if (x > boxRight) continue;
+            ctx.beginPath();
+            ctx.moveTo(x, boxTop);
+            ctx.lineTo(x, boxBottom);
+            ctx.stroke();
+        }
+    }
+    if (yStep > 0) {
+        for (let y = y0; y <= boxBottom; y += yStep) {
+            if (y < boxTop) continue;
+            ctx.beginPath();
+            ctx.moveTo(boxLeft, y);
+            ctx.lineTo(boxRight, y);
+            ctx.stroke();
+        }
+        for (let y = y0 - yStep; y >= boxTop; y -= yStep) {
+            if (y > boxBottom) continue;
+            ctx.beginPath();
+            ctx.moveTo(boxLeft, y);
+            ctx.lineTo(boxRight, y);
+            ctx.stroke();
+        }
+    }
+    ctx.restore(); // end grid clipping
+    // AXES (mirrored on box edges, not clipped)
+    ctx.setLineDash([]);
+    ctx.lineWidth = lineWidthAxes;
+    ctx.strokeStyle = colorAxes;
+    ctx.globalAlpha = opacityAxes;
+    if (dashAxes.length) ctx.setLineDash(dashAxes);
+    ctx.beginPath();
+    ctx.moveTo(boxLeft, boxTop);
+    ctx.lineTo(boxLeft, boxBottom);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(boxRight, boxTop);
+    ctx.lineTo(boxRight, boxBottom);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(boxLeft, boxTop);
+    ctx.lineTo(boxRight, boxTop);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(boxLeft, boxBottom);
+    ctx.lineTo(boxRight, boxBottom);
+    ctx.stroke();
+    // TICKS & LABELS (top / left only labeled)
+    if (drawTickMarks || labelTicks) {
+        ctx.setLineDash([]);
+        ctx.strokeStyle = colorAxes;
+        ctx.fillStyle = colorAxes;
+        ctx.lineWidth = 1;
+        ctx.font = font;
+        ctx.globalAlpha = opacityAxes;
+        // X ticks: mirror on top and bottom
+        if (xStep > 0) {
+            for (let x = x0; x <= boxRight; x += xStep) {
+                if (x < boxLeft) continue;
+                if (drawTickMarks) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, boxTop);
+                    ctx.lineTo(x, boxTop + tickSize);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, boxBottom - tickSize);
+                    ctx.lineTo(x, boxBottom);
+                    ctx.stroke();
+                }
+                if (labelTicks) {
+                    const text = String(x - x0);
+                    const width = ctx.measureText(text).width;
+                    ctx.fillText(text, x - width / 2, boxTop - labelOffset);
+                }
+            }
+            for (let x = x0 - xStep; x >= boxLeft; x -= xStep) {
+                if (x > boxRight) continue;
+                if (drawTickMarks) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, boxTop);
+                    ctx.lineTo(x, boxTop + tickSize);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, boxBottom - tickSize);
+                    ctx.lineTo(x, boxBottom);
+                    ctx.stroke();
+                }
+                if (labelTicks) {
+                    const text = String(x - x0);
+                    const width = ctx.measureText(text).width;
+                    ctx.fillText(text, x - width / 2, boxTop - labelOffset);
+                }
+            }
+        }
+        // Y ticks: mirror on left and right
+        if (yStep > 0) {
+            for (let y = y0; y <= boxBottom; y += yStep) {
+                if (y < boxTop) continue;
+                const value = y - y0;
+                const text = String(value);
+                const width = ctx.measureText(text).width;
+                if (drawTickMarks) {
+                    ctx.beginPath();
+                    ctx.moveTo(boxLeft, y);
+                    ctx.lineTo(boxLeft + tickSize, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(boxRight - tickSize, y);
+                    ctx.lineTo(boxRight, y);
+                    ctx.stroke();
+                }
+                if (labelTicks) {
+                    ctx.fillText(text, boxLeft - labelOffset - width, y + labelOffset);
+                }
+            }
+            for (let y = y0 - yStep; y >= boxTop; y -= yStep) {
+                if (y > boxBottom) continue;
+                const value = y - y0;
+                const text = String(value);
+                const width = ctx.measureText(text).width;
+                if (drawTickMarks) {
+                    ctx.beginPath();
+                    ctx.moveTo(boxLeft, y);
+                    ctx.lineTo(boxLeft + tickSize, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(boxRight - tickSize, y);
+                    ctx.lineTo(boxRight, y);
+                    ctx.stroke();
+                }
+                if (labelTicks) {
+                    ctx.fillText(text, boxLeft - labelOffset - width, y + labelOffset);
+                }
+            }
+        }
+    }
+
     ctx.restore();
 }
 
@@ -437,7 +824,7 @@ function draw_text(ctx, parameters = {}) {
     let {
         coordinate = [0, 0],
         text = 'TEXT',
-        font = '10pt Arial',
+        font = '10pt Times New Roman',
         color = '#888',
         opacity = 1,
     } = parameters;
@@ -565,11 +952,16 @@ function collision_geometry_get(exclude) {
 }
 
 export {
+    camera_apply,
+    camera_reset,
+    camera_set,
     collision_geometry_register,
     collision_geometry_reset,
     collision_geometry_get,
     draw_circle,
     draw_curve,
+    draw_grid_axes,
+    draw_grid_axes_box,
     draw_line,
     draw_rectangle,
     draw_robot_arm,

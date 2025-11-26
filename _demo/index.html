@@ -102,6 +102,25 @@
                             </span>
                         </button>
                     </div>
+                    <!-- Agent selector + Plot -->
+                    <div class="d-flex align-items-center">
+                        <select id="select-agent"
+                                class="form-select form-select-sm me-1"
+                                style="width: 110px;"
+                                onchange="plot_agent_timeseries();">
+                            <!-- options filled by simulation.js -->
+                        </select>
+                        <button id="btn-timeseries"
+                                type="button"
+                                class="btn btn-outline-secondary btn-sm"
+                                onclick="plot_agent_timeseries();">
+                            <span class="btn-stack">
+                                <i class="bi bi-graph-up"></i>
+                                <small class="label">Plot</small>
+                            </span>
+                        </button>
+                    </div>
+
                     <!-- Theme toggle -->
                     <button id="btn-theme"
                             type="button"
@@ -117,32 +136,26 @@
             </div>
         </div>
     </nav>
-    <div style="display: flex">
+    <div style="display: flex; gap: 8px;">
+        <div style="border: 1px solid #888; border-radius: 8px; padding: 20px;">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
         <div id="plots"
-             style="display:flex; display:none; flex-direction: column; gap: 0px;">
-            <div style="display:flex; gap:0px;">
-                <div id="plot-velocity"
-                     class="plot"></div>
-                <div id="plot-acceleration"
-                     class="plot"></div>
-                <div id="plot-jerk"
-                     class="plot"></div>
-            </div>
-            <div style="display:flex; gap:0px;">
-                <div id="plot-angular-velocity"
-                     style="width: 400px; height: 200px;"></div>
-                <div id="plot-angular-acceleration"
-                     class="plot"></div>
-                <div id="plot-angular-jerk"
-                     class="plot"></div>
-            </div>
+             style="border:1px solid #888; padding: 32px 20px 20px 20px; border-radius: 8px; display:flex; gap:0; align-items:flex-start; width:900px;">
+            <!-- X stack -->
+            <div id="stack-x"
+                 style="flex:1; width:200px; height:600px;"></div>
+            <!-- Y stack -->
+            <div id="stack-y"
+                 style="flex:1; width:200px; height:600px;"></div>
+            <!-- Theta stack -->
+            <div id="stack-theta"
+                 style="flex:1; width:200px; height:600px;"></div>
         </div>
     </div>
-    <canvas id="canvas" width="800" height="420"></canvas>
 </div>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_SVG"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>

@@ -1,7 +1,16 @@
 import {Agent} from "./object/agent.js";
-import {collision_geometry_get, collision_geometry_reset, draw_truss,} from "./canvas.js";
+import {
+    camera_apply,
+    camera_reset,
+    camera_set,
+    collision_geometry_get,
+    collision_geometry_reset,
+    draw_grid_axes_box,
+    draw_truss,
+} from "./canvas.js";
 import {Obstacle} from "./object/obstacle.js";
 import {CONFIGURATION} from './configuration.js';
+import Plotly from 'https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/+esm';
 
 // parameters
 let agents = [];
@@ -9,6 +18,7 @@ let obstacles = [];
 let lastTimestamp = null;
 let animationActive = false;
 let simulationSpeed = 1;
+let framerate = 60;
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 // theme
@@ -33,6 +43,7 @@ window.theme_onclick = function () {
 const btnPlay = document.getElementById('btn-play');
 const btnStep = document.getElementById('btn-step');
 const btnStop = document.getElementById('btn-stop');
+const agentSelect = document.getElementById('select-agent');
 window.play_pause = function () {
     animationActive = !animationActive;
     if (animationActive) {
@@ -50,7 +61,7 @@ window.stop_reset = function () {
 };
 window.step_once = function () {
     if (animationActive) return;
-    const dt = speedInput.value / 60; // one iteration step
+    const dt = speedInput.value / framerate; // one iteration step
     run_frame(dt);
 };
 const speedInput = document.getElementById('speed');
@@ -62,6 +73,17 @@ speedInput.addEventListener('input', () => {
     simulationSpeed = parseFloat(v.toFixed(1));
     speedInput.value = simulationSpeed.toFixed(1);
 });
+
+function populate_agent_select() {
+    if (!agentSelect) return;
+    agentSelect.innerHTML = '';
+    agents.forEach((agent, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = agent.name || `Agent ${i}`;
+        agentSelect.appendChild(opt);
+    });
+}
 
 function simulation_controls_update() {
     const icon = btnPlay.querySelector('i');
@@ -85,6 +107,18 @@ function simulation_controls_update() {
     if (lblTheme) lblTheme.textContent = dark ? 'Light' : 'Dark';
 })();
 
+function agent_reached_target(agent, tolerance=1e-6) {
+    const dx = agent.position.x - agent.targetX;
+    const dy = agent.position.y - agent.targetY;
+    const dist = Math.hypot(dx, dy);
+    // orientation difference wrapped to [-pi, pi]
+    let dtheta = agent.orientation - agent.targetOrientation;
+    dtheta = Math.atan2(Math.sin(dtheta), Math.cos(dtheta));
+    const posTol = 5;             // pixels
+    const oriTol = Math.PI / 90;  // ~2 degrees
+    return dist < posTol && Math.abs(dtheta) < oriTol;
+}
+
 function run_frame(dt) {
     for (const obstacle of obstacles) {
         obstacle.step(dt);
@@ -93,6 +127,17 @@ function run_frame(dt) {
         agent.step(performance.now(), dt, collision_geometry_get, agent.svgSize);
     }
     simulation_draw();
+    let allDone = agents.length > 0 && agents.every(agent_reached_target);
+    if (allDone && animationActive) {
+        animationActive = false;
+        simulation_controls_update();
+        if (typeof window.plot_agent_timeseries === 'function') {
+            window.plot_agent_timeseries();
+        }
+        for (const agent of agents) {
+            console.log(agent);
+        }
+    }
 }
 
 function simulation_reinstantiate_from_configs() {
@@ -125,6 +170,7 @@ function simulation_reinstantiate_from_configs() {
             },
         }));
     }
+    populate_agent_select();
 }
 
 function simulation_animate(ts) {
@@ -143,8 +189,17 @@ function simulation_animate(ts) {
 }
 
 function simulation_draw() {
+    camera_apply(ctx);
     collision_geometry_reset();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    draw_grid_axes_box(ctx, {
+        boxOrigin: [0, 0],
+        boxWidth: 750,
+        boxHeight: 550,
+        origin: [0, 0], // logical (0,0) inside box
+        xStep: 50,
+        yStep: 50
+    });
     for (const env of CONFIGURATION.environment) {
         draw_truss(ctx, {...env.truss, collision: true});
     }
@@ -158,10 +213,261 @@ function simulation_draw() {
         const collisionGeometry = collision_geometry_get(agent.name);
         agent.lidar.draw(ctx, collisionGeometry);
     }
+    camera_reset(ctx);
 }
+
+function plotAgentTimeSeries(trail, divId) {
+    if (!trail || trail.length === 0) return;
+    const t = trail.map(p => p.t);
+    const x = trail.map(p => p.x);
+    const y = trail.map(p => p.y);
+    const theta = trail.map(p => p.orientation);
+    const data = [
+        {x: t, y: x, name: 'x(t)', mode: 'lines', type: 'scatter', yaxis: 'y'},
+        {x: t, y: y, name: 'y(t)', mode: 'lines', type: 'scatter', yaxis: 'y2'},
+        {x: t, y: theta, name: 'orientation(t)', mode: 'lines', type: 'scatter', yaxis: 'y3'},
+    ];
+    const layout = {
+        title: 'Agent state vs time',
+        xaxis: {title: '$\\mathrm{time} [\\mathrm{s}]$'},
+        yaxis: {title: 'x'},
+        yaxis2: {title: 'y', overlaying: 'y', side: 'right'},
+        yaxis3: {title: 'orientation [rad]', anchor: 'free', overlaying: 'y', side: 'right', position: 1.1},
+        legend: {orientation: 'h'},
+        margin: {l: 60, r: 80, t: 40, b: 40},
+    };
+    const config = {responsive: true};
+    Plotly.newPlot(divId, data, layout, config);
+}
+
+window.plot_agent_timeseries = function () {
+    if (!agents || agents.length === 0) return;
+    const index = parseInt(agentSelect.value, 10);
+    const agent = agents[index];
+    const trail = agent.trail;
+    if (!trail || trail.length < 4) return;
+    const t = trail.map(p => p.t);
+    const x = trail.map(p => p.x);
+    const y = trail.map(p => p.y);
+    const theta = trail.map(p => p.orientation);
+    const dt = t.map((ti, i) => i === 0 ? 0 : (ti - t[i - 1]));
+    const deriv = (arr, dtArr) => arr.map((v, i) => i === 0 ? 0 : (arr[i] - arr[i - 1]) / (dtArr[i] || 1e-6));
+    const xdot = deriv(x, dt);
+    const xddot = deriv(xdot, dt);
+    const xdddot = deriv(xddot, dt);
+    const ydot = deriv(y, dt);
+    const yddot = deriv(ydot, dt);
+    const ydddot = deriv(yddot, dt);
+    const thetadot = deriv(theta, dt);
+    const thetaddot = deriv(thetadot, dt);
+    const thetadddot = deriv(thetaddot, dt);
+
+    // 4x1 vertical stack with shared x
+    function plotStack(divId, traces, yTitles, mainTitle) {
+        const data = [
+            {
+                x: t,
+                y: traces[0],
+                name: yTitles[0],
+                xaxis: 'x',
+                yaxis: 'y',
+                mode: 'lines',
+                line: {color: 'black', width: 1,}
+            },
+            {
+                x: t,
+                y: traces[1],
+                name: yTitles[1],
+                xaxis: 'x2',
+                yaxis: 'y2',
+                mode: 'lines',
+                line: {color: 'black', width: 1,}
+            },
+            {
+                x: t,
+                y: traces[2],
+                name: yTitles[2],
+                xaxis: 'x3',
+                yaxis: 'y3',
+                mode: 'lines',
+                line: {color: 'black', width: 1,}
+            },
+            {
+                x: t,
+                y: traces[3],
+                name: yTitles[3],
+                xaxis: 'x4',
+                yaxis: 'y4',
+                mode: 'lines',
+                line: {color: 'black', width: 1,}
+            },
+        ];
+
+        // per-subplot y extents
+        const yMin = traces.map(arr => Math.min(...arr));
+        const yMax = traces.map(arr => Math.max(...arr));
+        const axisOptions = {
+            linecolor: 'black',
+            linewidth: 1,
+            ticks: 'inside',
+            mirror: 'all',
+            tickfont: {
+                family: 'Times New Roman',
+                size: 12,
+                color: 'black',
+            }
+        };
+        // vertical lines at replan times
+        const replans = agent.replans || [];
+        const shapes = [];
+        for (const rp of replans) {
+            const tRp = rp.t;
+            shapes.push(
+                {
+                    type: 'line',
+                    xref: 'x',
+                    yref: 'y',
+                    x0: tRp,
+                    x1: tRp,
+                    y0: yMin[0],
+                    y1: yMax[0],
+                    line: {color: 'red', width: 1, dash: 'dot'}
+                },
+                {
+                    type: 'line',
+                    xref: 'x2',
+                    yref: 'y2',
+                    x0: tRp,
+                    x1: tRp,
+                    y0: yMin[1],
+                    y1: yMax[1],
+                    line: {color: 'red', width: 1, dash: 'dot'}
+                },
+                {
+                    type: 'line',
+                    xref: 'x3',
+                    yref: 'y3',
+                    x0: tRp,
+                    x1: tRp,
+                    y0: yMin[2],
+                    y1: yMax[2],
+                    line: {color: 'red', width: 1, dash: 'dot'}
+                },
+                {
+                    type: 'line',
+                    xref: 'x4',
+                    yref: 'y4',
+                    x0: tRp,
+                    x1: tRp,
+                    y0: yMin[3],
+                    y1: yMax[3],
+                    line: {color: 'red', width: 1, dash: 'dot'}
+                },
+            );
+        }
+        const layout = {
+            //title: mainTitle,
+            render_mode: 'svg',
+            grid: {rows: 4, columns: 1, pattern: 'independent'},
+            margin: {l: 50, r: 10, t: 30, b: 30},
+            font: {
+                family: 'Times New Roman',
+                size: 12,
+                color: 'black',
+            },
+            xaxis: {
+                ...axisOptions,
+            },
+            xaxis2: {
+                matches: 'x',
+                ...axisOptions,
+            },
+            xaxis3: {
+                matches: 'x',
+                ...axisOptions,
+            },
+            xaxis4: {
+                title: '$\\mathrm{time}\\:[\\mathrm{s}]$',
+                matches: 'x',
+                ...axisOptions,
+            },
+            yaxis: {
+                title: yTitles[0],
+                ...axisOptions,
+            },
+            yaxis2: {
+                title: yTitles[1],
+                ...axisOptions,
+            },
+            yaxis3: {
+                title: yTitles[2],
+                ...axisOptions,
+            },
+            yaxis4: {
+                title: yTitles[3],
+                ...axisOptions,
+            },
+            shapes: shapes,
+            showlegend: false,
+        };
+        Plotly.newPlot(divId, data, layout, {responsive: true});
+    }
+    // Stack 1: x
+    plotStack(
+        'stack-x',
+        [
+            x,
+            xdot,
+            xddot,
+            xdddot,
+        ],
+        [
+            '$x(t)\\:[\\mathrm{m}]$',
+            '$\\dot{x}(t)\\:[\\mathrm{m/s}]$',
+            '$\\ddot{x}(t)\\:[\\mathrm{m/s^2}]$',
+            '$\\dddot{x}(t)\\:[\\mathrm{m/s^3}]$',
+        ],
+        'X vs time'
+    );
+    // Stack 2: y
+    plotStack(
+        'stack-y',
+        [
+            y,
+            ydot,
+            yddot,
+            ydddot,
+        ],
+        [
+            '$y(t)\\:[\\mathrm{m}]$',
+            '$\\dot{y}(t)\\:[\\mathrm{m/s}]$',
+            '$\\ddot{y}(t)\\:[\\mathrm{m/s^2}]$',
+            '$\\dddot{y}(t)\\:[\\mathrm{m/s^3}]$',
+        ],
+        'Y vs time'
+    );
+    // Stack 3: theta
+    plotStack(
+        'stack-theta',
+        [
+            theta,
+            thetadot,
+            thetaddot,
+            thetadddot,
+        ],
+        [
+            '$\\theta(t)\\:[\\mathrm{rad}]$',
+            '$\\dot{\\theta}(t)\\:[\\mathrm{rad/s}]$',
+            '$\\ddot{\\theta}(t)\\:[\\mathrm{rad/s^2}]$',
+            '$\\dddot{\\theta}(t)\\:[\\mathrm{rad/s^3}]$',
+        ],
+        'Orientation vs time'
+    );
+};
 
 window.onload = () => {
     simulation_reinstantiate_from_configs();
+    camera_set({center: {x: (canvas.width / 2) - 30, y: (canvas.height / 2) - 30}, zoom: 1});
     simulation_draw();
     simulation_controls_update();
     requestAnimationFrame(simulation_animate);

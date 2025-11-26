@@ -18,6 +18,7 @@ class Agent {
             plannerParameters = {},
             lidarParameters = {}
         } = parameters;
+        this.time = 0;
         this.position = {x: positionX, y: positionY};
         this.orientation = orientation;
         this.targetX = targetX;
@@ -26,9 +27,12 @@ class Agent {
         this.name = name;
         this.speed = speed;
         this.trail = [];
+        this.replans = [];
         this.lastTrailTime = null;
         this.trailAccum = 0;
         this.lidar = new Lidar(lidarParameters);
+        this.lidar.position = {x: this.position.x, y: this.position.y};
+        this.lidar.orientation = this.orientation;
         this.plannerParameters = plannerParameters;
         this.planner = new planner({
             initialX: this.position.x,
@@ -46,6 +50,7 @@ class Agent {
             colorBodyOutline: '#888',
             colorPath: '#888',
             colorTrail: '#000',
+            colorReplanTrail: '#f00',
             colorText: '#888',
             sizeTrail: 1,
             intervalTrail: 0.15,
@@ -65,18 +70,34 @@ class Agent {
         }
     }
 
+    mark_replan(time) {
+        if (!this.trail.length) return;
+        let index = this.trail.length - 1;
+        for (let i = 0; i < this.trail.length; ++i) {
+            if (this.trail[i].t >= time) {
+                index = i;
+                break;
+            }
+        }
+        this.trail[index].replan = true;
+    }
+
+
     trail_update(dt) {
         this.trailAccum += dt;
         if (this.trail.length === 0 || this.trailAccum >= this.renderParameters.intervalTrail) {
             this.trail.push({
+                t: this.time,
                 x: this.position.x,
                 y: this.position.y,
+                orientation: this.orientation,
             });
             this.trailAccum = 0;
         }
     }
 
     step(ts, dt, collision_geometry_get) {
+        this.time += dt;
         this.trail_update(dt);
         if (this.lidar) {
             this.lidar.position = {
@@ -101,12 +122,14 @@ class Agent {
             const prev = this.trail[i - 1];
             const curr = this.trail[i];
             const angle = Math.atan2(curr.y - prev.y, curr.x - prev.x);
+            const isReplan = !!curr.replan;
+            const color = isReplan ? this.renderParameters.colorReplanTrail : this.renderParameters.colorTrail;
             draw_triangle(ctx, {
                 coordinate: [curr.x, curr.y],
                 orientation: angle,
                 size: this.renderParameters.sizeTrail,
-                colorFill: this.renderParameters.colorTrail,
-                colorOutline: this.renderParameters.colorTrail,
+                colorFill: color,
+                colorOutline: color,
                 opacityFill: 1,
                 opacityOutline: 1,
             });
